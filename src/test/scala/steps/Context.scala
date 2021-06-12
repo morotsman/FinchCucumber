@@ -1,31 +1,34 @@
 package steps
 
 import cats.effect.IO
-import io.cucumber.scala.{ScalaDsl, Scenario}
+
+
+
 
 object Context {
 
-  private var testSpec: IO[Unit] = IO.pure()
-
-  def fGiven(f: () => Unit): Unit = {
-    Context.testSpec = Context.testSpec.flatMap(_ => IO {
-      f()
-    })
-  }
-
-  def fThen(f: () => Unit): Unit = {
-    Context.testSpec = Context.testSpec.flatMap(_ => IO {
-      f()
-    })
-  }
+  def apply[A](a: A): Context[A] = new Context[A](a)
 
 }
 
-class Context extends ScalaDsl {
+class Context[A](a: A) {
 
-  After { scenario: Scenario =>
-    Context.testSpec.unsafeRunSync()
+  var testSpec: IO[A] = IO.pure(a)
+
+  def map(f: A => A): Unit = {
+    testSpec = testSpec.flatMap(a => IO {
+      f(a)
+    })
   }
+
+  def foreach(f: A => Unit): Unit = {
+    testSpec = testSpec.flatMap(a => IO {
+      f(a)
+      a
+    })
+  }
+
+  def run(): Unit = testSpec.unsafeRunSync()
 
 }
 

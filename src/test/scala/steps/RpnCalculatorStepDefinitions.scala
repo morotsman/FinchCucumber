@@ -3,23 +3,26 @@ package steps
 import com.github.morotsman.investigate_finagle_service.candy_finch.RpnCalculator
 import io.cucumber.scala.{EN, ScalaDsl, Scenario}
 import org.junit.Assert._
+import steps.World.spec
 
-import Context._
 
 class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
 
   val calc = new RpnCalculator
 
   When("""I add {double} and {double}""") { (arg1: Double, arg2: Double) =>
-    fGiven(() => {
+    spec.map(a => {
+      println(a)
       calc push arg1
       calc push arg2
       calc push "+"
+      a + 10
     })
   }
 
   Then("the result is {double}") { (expected: Double) =>
-    fThen(() => {
+    spec.foreach(a => {
+      println(a)
       assertEquals(expected, calc.value, 0.001)
     })
   }
