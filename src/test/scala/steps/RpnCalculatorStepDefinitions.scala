@@ -11,17 +11,17 @@ class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
   val calc = new RpnCalculator
 
   When("""I add {double} and {double}""") { (arg1: Double, arg2: Double) =>
-    spec.map(a => {
+    spec.add(a => {
       println(a)
       calc push arg1
       calc push arg2
       calc push "+"
-      a + 10
+      Context(a.number.map(_ + 10))
     })
   }
 
   Then("the result is {double}") { (expected: Double) =>
-    spec.foreach(a => {
+    spec.validate(a => {
       println(a)
       assertEquals(expected, calc.value, 0.001)
     })
