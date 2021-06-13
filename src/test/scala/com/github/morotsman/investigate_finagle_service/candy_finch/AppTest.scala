@@ -4,6 +4,8 @@ import cats.effect.IO
 import cats.effect.concurrent.Ref
 import com.twitter.finagle.http.Status
 import io.circe.generic.auto._
+import io.finch
+import io.finch.Application.Json
 import io.finch._
 import io.finch.circe._
 import io.finch.internal.DummyExecutionContext
@@ -44,7 +46,7 @@ class AppTest extends AnyFlatSpec with Matchers {
       TestApp(Ref.unsafe[IO, Int](id), Ref.unsafe[IO, Map[Int, MachineState]](store.toMap))
     }
 
-  private implicit def arbitraryTodoWithoutId: Arbitrary[MachineWithoutId] = Arbitrary(genMachineWithoutId)
+  private implicit def arbitraryMachineWithoutId: Arbitrary[MachineWithoutId] = Arbitrary(genMachineWithoutId)
 
   private implicit def arbitraryApp: Arbitrary[TestApp] = Arbitrary(genTestApp)
 
@@ -57,6 +59,7 @@ class AppTest extends AnyFlatSpec with Matchers {
         newMachine <- app.createMachine(input).output.get
         next <- app.state
       } yield prev.id + 1 == next.id &&
+        !prev.store.contains(newMachine.value.id) &&
         prev.store + (prev.id -> newMachine.value) == next.store &&
         newMachine.value == machine.withId(prev.id)
 
