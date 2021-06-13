@@ -16,7 +16,7 @@ class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
       calc push arg1
       calc push arg2
       calc push "+"
-      Context(a.number.map(_ + 10))
+      a.copy(number = a.number.map(_ + 10))
     })
   }
 
