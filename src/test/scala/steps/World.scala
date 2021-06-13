@@ -8,7 +8,8 @@ case class Context(
                   )
 
 object World {
-  val spec: Spec[IO, Context] = Spec[IO, Context](Context(Some(2)))
+  private val initialContext = Context(Some(2))
+  val spec: Spec[IO, Context] = Spec(initialContext)
 }
 
 class World extends ScalaDsl {

@@ -11,7 +11,7 @@ class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
   val calc = new RpnCalculator
 
   When("""I add {double} and {double}""") { (arg1: Double, arg2: Double) =>
-    spec.add(a => {
+    spec + (a => {
       println(a)
       calc push arg1
       calc push arg2
