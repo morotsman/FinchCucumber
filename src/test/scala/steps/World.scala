@@ -2,10 +2,7 @@ package steps
 
 import cats.effect.IO
 import io.cucumber.scala.{ScalaDsl, Scenario}
-
-case class Context(
-                    number: Option[Int]
-                  )
+import steps.helpers.Spec
 
 object World {
   private val initialContext = Context(Some(2))

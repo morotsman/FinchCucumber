@@ -1,4 +1,4 @@
-package steps
+package steps.helpers
 
 import cats.Monad
 import cats.implicits._
