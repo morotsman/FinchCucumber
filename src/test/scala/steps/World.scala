@@ -5,8 +5,7 @@ import io.cucumber.scala.{ScalaDsl, Scenario}
 import steps.helpers.Spec
 
 object World {
-  private val initialContext = Context(Some(2))
-  val spec: Spec[IO, Context] = Spec(initialContext)
+  val spec: Spec[IO, Context] = Spec(Context.emptyContext)
 }
 
 class World extends ScalaDsl {
