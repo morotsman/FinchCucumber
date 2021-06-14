@@ -4,6 +4,7 @@ Feature: Add a candy machine to the park
 
   Scenario: Add a machine to the park
     Given a park of candy machines
-    When another candy machine is added
+    And a candy machine
+    When the candy machine is added to the park
     Then the machine should be allocated an unique id
     And the machine should be added to the park

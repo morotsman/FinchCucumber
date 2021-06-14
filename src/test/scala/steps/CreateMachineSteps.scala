@@ -49,11 +49,17 @@ class CreateMachineSteps extends ScalaDsl with EN {
 
   Given("""a park of candy machines""") { () =>
     spec + (context => {
-      context.copy(appGenerator = Some(genTestApp), machineGenerator = Some(genMachineWithoutId))
+      context.copy(appGenerator = Some(genTestApp))
     })
   }
 
-  When("""another candy machine is added""") { () =>
+  Given("""a candy machine""") { () =>
+    spec + (context => {
+      context.copy(machineGenerator = Some(genMachineWithoutId))
+    })
+  }
+
+  When("""the candy machine is added to the park""") { () =>
     spec + (context => {
       context.copy(createMachineRequest = Some(Input.post("/machine").withBody[Application.Json]))
     })
