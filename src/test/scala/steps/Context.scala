@@ -1,14 +1,13 @@
 package steps
 
-import io.finch
 import io.finch.Application.Json
 import io.finch.Input
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 
 case class Context(
                     number: Option[Int],
-                    appGenerator: Option[Gen[TestApp]],
-                    machineGenerator: Option[Gen[MachineWithoutId]],
+                    appGenerator: Option[Arbitrary[TestApp]],
+                    machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     createMachineRequest: Option[Input.Body[Json]],
                     getMachinesRequest: Option[Input]
                   )

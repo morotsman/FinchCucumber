@@ -2,16 +2,16 @@ package steps
 
 import com.github.morotsman.investigate_finagle_service.candy_finch.{App, MachineState}
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Application, Input}
+import io.finch.{Application, Input, Output}
 import org.scalatestplus.scalacheck.Checkers.check
 import steps.World.spec
 import cats.effect.IO
 import cats.effect.concurrent.Ref
 import io.circe.generic.auto._
-import io.finch
 import io.finch.circe._
 import io.finch.internal.DummyExecutionContext
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.Assertion
 import org.scalatestplus.scalacheck.Checkers._
 import steps.helpers.PrerequisiteException
 
@@ -49,13 +49,13 @@ class CreateMachineSteps extends ScalaDsl with EN {
 
   Given("""a park of candy machines""") { () =>
     spec + (context => {
-      context.copy(appGenerator = Some(genTestApp))
+      context.copy(appGenerator = Some(Arbitrary(genTestApp)))
     })
   }
 
   Given("""a candy machine""") { () =>
     spec + (context => {
-      context.copy(machineGenerator = Some(genMachineWithoutId))
+      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId)))
     })
   }
 
@@ -66,52 +66,35 @@ class CreateMachineSteps extends ScalaDsl with EN {
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
-    spec.validate(context => {
-      implicit val machine = Arbitrary(
-        context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
-      )
-      implicit val app = Arbitrary(
-        context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-      )
-      val request = context.createMachineRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-      check { (app: TestApp, machine: MachineWithoutId) =>
-        val input: finch.Input = request(machine)
-        val shouldBeTrue: IO[Boolean] = for {
-          prev <- app.state
-          newMachine <- app.createMachine(input).output.get
-          next <- app.state
-        } yield
-          prev.id + 1 == next.id &&
-          !prev.store.contains(newMachine.value.id)
-
-        shouldBeTrue.unsafeRunSync()
-      }
+    spec.validate(context => validateMachineCreation(context) { (_, prev, newMachine, next) =>
+      prev.id + 1 == next.id && !prev.store.contains(newMachine.value.id)
     })
     spec.run().unsafeRunSync()
   }
 
   Then("""the machine should be added to the park""") { () =>
-    spec.validate(context => {
-      implicit val machine = Arbitrary(
-        context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
-      )
-      implicit val app = Arbitrary(
-        context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-      )
-      val request = context.createMachineRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-      check { (app: TestApp, machine: MachineWithoutId) =>
-        val input: finch.Input = request(machine)
-        val shouldBeTrue: IO[Boolean] = for {
-          prev <- app.state
-          newMachine <- app.createMachine(input).output.get
-          next <- app.state
-        } yield
-          prev.store + (prev.id -> newMachine.value) == next.store &&
-          newMachine.value == machine.withId(prev.id)
-
-        shouldBeTrue.unsafeRunSync()
-      }
+    spec.validate(context => validateMachineCreation(context) { (machineToAdd, prev, newMachine, next) =>
+      prev.store + (prev.id -> newMachine.value) == next.store &&
+        newMachine.value == machineToAdd.withId(prev.id)
     })
     spec.run().unsafeRunSync()
+  }
+
+  def validateMachineCreation(context: Context)(validator: (MachineWithoutId, AppState, Output[MachineState], AppState) => Boolean): Assertion = {
+    implicit val machine: Arbitrary[MachineWithoutId] =
+      context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
+    implicit val app: Arbitrary[TestApp] =
+      context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
+
+    val request = context.createMachineRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    check { (app: TestApp, machine: MachineWithoutId) =>
+      val shouldBeTrue: IO[Boolean] = for {
+        prev <- app.state
+        newMachine <- app.createMachine(request(machine)).output.get
+        next <- app.state
+      } yield validator(machine, prev, newMachine, next)
+
+      shouldBeTrue.unsafeRunSync()
+    }
   }
 }

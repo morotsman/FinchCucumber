@@ -1,10 +1,10 @@
 package steps
 
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Application, Input}
+import io.finch.Input
 import org.scalatestplus.scalacheck.Checkers.check
 import steps.World.spec
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
 import org.scalatestplus.scalacheck.Checkers._
 import steps.helpers.PrerequisiteException
 
@@ -15,11 +15,11 @@ class GetMachinesSteps extends ScalaDsl with EN {
       context.copy(getMachinesRequest = Some(Input.get("/machine")))
     })
   }
+
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
     spec.validate(context => {
-      implicit val app = Arbitrary(
+      implicit val app: Arbitrary[TestApp] =
         context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-      )
       val request = context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
       check { (app: TestApp) =>
         val shouldBeTrue = for {
