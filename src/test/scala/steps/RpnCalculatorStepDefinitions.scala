@@ -24,8 +24,7 @@ class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
     spec.validate(a => {
       println(a)
       assertEquals(expected, calc.value, 0.001)
-    })
-    spec.run().unsafeRunSync()
+    }).unsafeRunSync()
   }
 
   Before("not @foo") { (scenario: Scenario) =>

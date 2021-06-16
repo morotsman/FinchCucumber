@@ -32,8 +32,7 @@ class GetMachinesSteps extends ScalaDsl with EN {
 
         shouldBeTrue.unsafeRunSync()
       }
-    })
-    spec.run().unsafeRunSync()
+    }).unsafeRunSync()
   }
 
   private def stateUnChanged(prev: AppState, next: AppState): Boolean =

@@ -68,16 +68,14 @@ class CreateMachineSteps extends ScalaDsl with EN {
   Then("""the machine should be allocated an unique id""") { () =>
     spec.validate(context => validateMachineCreation(context) { (_, prev, newMachine, next) =>
       prev.id + 1 == next.id && !prev.store.contains(newMachine.value.id)
-    })
-    spec.run().unsafeRunSync()
+    }).unsafeRunSync()
   }
 
   Then("""the machine should be added to the park""") { () =>
     spec.validate(context => validateMachineCreation(context) { (machineToAdd, prev, newMachine, next) =>
       prev.store + (prev.id -> newMachine.value) == next.store &&
         newMachine.value == machineToAdd.withId(prev.id)
-    })
-    spec.run().unsafeRunSync()
+    }).unsafeRunSync()
   }
 
   def validateMachineCreation(context: Context)(validator: (MachineWithoutId, AppState, Output[MachineState], AppState) => Boolean): Assertion = {
