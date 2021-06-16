@@ -20,6 +20,7 @@ class GetMachinesSteps extends ScalaDsl with EN {
     spec.validate(context => {
       implicit val app: Arbitrary[TestApp] =
         context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
+
       val request = context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
       check { (app: TestApp) =>
         val shouldBeTrue = for {
