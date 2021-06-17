@@ -11,7 +11,7 @@ class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
   val calc = new RpnCalculator
 
   When("""I add {double} and {double}""") { (arg1: Double, arg2: Double) =>
-    spec + (a => {
+    spec.add(a => {
       println(a)
       calc push arg1
       calc push arg2
@@ -24,7 +24,8 @@ class RpnCalculatorStepDefinitions extends ScalaDsl with EN {
     spec.validate(a => {
       println(a)
       assertEquals(expected, calc.value, 0.001)
-    }).unsafeRunSync()
+    })
+    spec.value().unsafeRunSync()
   }
 
   Before("not @foo") { (scenario: Scenario) =>

@@ -48,19 +48,19 @@ class CreateMachineSteps extends ScalaDsl with EN {
     }
 
   Given("""a park of candy machines""") { () =>
-    spec + (context => {
+    spec.add(context => {
       context.copy(appGenerator = Some(Arbitrary(genTestApp)))
     })
   }
 
   Given("""a candy machine""") { () =>
-    spec + (context => {
+    spec.add(context => {
       context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId)))
     })
   }
 
   When("""the candy machine is added to the park""") { () =>
-    spec + (context => {
+    spec.add(context => {
       context.copy(createMachineRequest = Some(Input.post("/machine").withBody[Application.Json]))
     })
   }
@@ -68,14 +68,16 @@ class CreateMachineSteps extends ScalaDsl with EN {
   Then("""the machine should be allocated an unique id""") { () =>
     spec.validate(context => validateMachineCreation(context) { (_, prev, newMachine, next) =>
       prev.id + 1 == next.id && !prev.store.contains(newMachine.value.id)
-    }).unsafeRunSync()
+    })
+    spec.value().unsafeRunSync()
   }
 
   Then("""the machine should be added to the park""") { () =>
     spec.validate(context => validateMachineCreation(context) { (machineToAdd, prev, newMachine, next) =>
       prev.store + (prev.id -> newMachine.value) == next.store &&
         newMachine.value == machineToAdd.withId(prev.id)
-    }).unsafeRunSync()
+    })
+    spec.value().unsafeRunSync()
   }
 
   def validateMachineCreation(context: Context)(validator: (MachineWithoutId, AppState, Output[MachineState], AppState) => Boolean): Assertion = {

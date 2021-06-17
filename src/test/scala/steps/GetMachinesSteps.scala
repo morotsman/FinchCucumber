@@ -11,7 +11,7 @@ import steps.helpers.PrerequisiteException
 class GetMachinesSteps extends ScalaDsl with EN {
 
   When("""checking the statuses of the candy machines in the park""") { () =>
-    spec + (context => {
+    spec.add(context => {
       context.copy(getMachinesRequest = Some(Input.get("/machine")))
     })
   }
@@ -32,7 +32,8 @@ class GetMachinesSteps extends ScalaDsl with EN {
 
         shouldBeTrue.unsafeRunSync()
       }
-    }).unsafeRunSync()
+    })
+    spec.value().unsafeRunSync()
   }
 
   private def stateUnChanged(prev: AppState, next: AppState): Boolean =

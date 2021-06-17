@@ -18,15 +18,14 @@ class Spec[F[_] : Monad, A](a: A) {
     f(a).pure[F]
   ))
 
-  def +(f: A => A): Unit = add(f)
-
-  def validate(f: A => Unit): F[A] = {
+  def validate(f: A => Unit): Unit = {
     add(spec.flatMap(a => {
       f(a)
       a.pure[F]
     }))
-    spec
   }
+
+  def value(): F[A] = spec
 }
 
 
