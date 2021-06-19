@@ -115,7 +115,7 @@ class AppTest extends AnyFlatSpec with Matchers {
   def machineUnknown(id: Int, prev: AppState): Boolean =
     !prev.store.contains(id)
 
-  def machineInWrongState(id: Int, prev: AppState, command: Input): Boolean = command match {
+  def machineInWrongState(id: Int, prev: AppState, command: MachineInput): Boolean = command match {
     case Turn =>
       prev.store(id).locked || prev.store(id).candies <= 0
     case Coin =>

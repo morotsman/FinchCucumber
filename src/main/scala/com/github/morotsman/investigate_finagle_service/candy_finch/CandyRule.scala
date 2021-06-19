@@ -1,7 +1,7 @@
 package com.github.morotsman.investigate_finagle_service.candy_finch
 
 object CandyRule {
-  def applyRule(input: Input)(machine: MachineState): Either[Throwable, MachineState] = input match {
+  def applyRule(input: MachineInput)(machine: MachineState): Either[Throwable, MachineState] = input match {
     case Coin =>
       if (machine.candies <= 0) {
         Left(new IllegalStateException("No candies left"))
@@ -21,9 +21,9 @@ object CandyRule {
   }
 }
 
-sealed trait Input
+sealed trait MachineInput
 
-case object Coin extends Input
+case object Coin extends MachineInput
 
-case object Turn extends Input
+case object Turn extends MachineInput
 

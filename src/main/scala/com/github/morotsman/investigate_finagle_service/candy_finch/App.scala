@@ -34,13 +34,13 @@ class App(
     handleInput(Coin)
   }
 
-  private def handleInput(input: Input): Int => IO[Output[MachineState]] = {
+  private def handleInput(input: MachineInput): Int => IO[Output[MachineState]] = {
     id: Int => {
       storeRef.modify { updateMachineState(input, id)}
     }
   }
 
-  private def updateMachineState(input: Input, id: Int): Map[Int, MachineState] => (Map[Int, MachineState], Output[MachineState]) = {
+  private def updateMachineState(input: MachineInput, id: Int): Map[Int, MachineState] => (Map[Int, MachineState], Output[MachineState]) = {
     store: Map[Int, MachineState] =>
       val result = for {
         machine <- store.get(id).toRight(new NoSuchElementException)
@@ -49,8 +49,9 @@ class App(
 
       result match {
         case Right(m) => (store + (id -> m), Ok(m))
-        case Left(e: NoSuchElementException) => (store, Output.empty(Status.NotFound))
-        case Left(e: IllegalStateException) => (store, Output.empty(Status.BadRequest))
+        case Left(_: NoSuchElementException) => (store, Output.empty(Status.NotFound))
+        case Left(_: IllegalStateException) => (store, Output.empty(Status.BadRequest))
+        case Left(_) => (store, Output.empty(Status.InternalServerError))
       }
   }
 

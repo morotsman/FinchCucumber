@@ -1,9 +1,9 @@
 Feature: Insert a coin in the candy machine
 
-  Scenario: Insert a coin in a non existing machine
+  Scenario: Insert a coin in a machine that has not been added to the park
     Given a park of candy machines
-    When the customer inserts a coin in a unknown candy machine
-    Then the customer should be notified about the problem
+    When the customer inserts a coin in a candy machine that has not been added to the park
+    Then the coin should be rejected
 
   Scenario: Insert a coin in a locked machine
     Given a park of candy machines
