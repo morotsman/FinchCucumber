@@ -66,16 +66,16 @@ class CreateMachineSteps extends ScalaDsl with EN {
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
-    spec.validate(context => validateMachineCreation(context) { (_, prev, newMachine, next) =>
-      prev.id + 1 == next.id && !prev.store.contains(newMachine.value.id)
+    spec.validate(context => validateMachineCreation(context) { (_, prevAppState, addedMachine, nextAppState) =>
+      prevAppState.id + 1 == nextAppState.id && !prevAppState.store.contains(addedMachine.value.id)
     })
     spec.value().unsafeRunSync()
   }
 
   Then("""the machine should be added to the park""") { () =>
-    spec.validate(context => validateMachineCreation(context) { (machineToAdd, prev, newMachine, next) =>
-      prev.store + (prev.id -> newMachine.value) == next.store &&
-        newMachine.value == machineToAdd.withId(prev.id)
+    spec.validate(context => validateMachineCreation(context) { (machineToAdd, prevAppState, addedMachine, nextAppState) =>
+      prevAppState.store + (prevAppState.id -> addedMachine.value) == nextAppState.store &&
+        addedMachine.value == machineToAdd.withId(prevAppState.id)
     })
     spec.value().unsafeRunSync()
   }
@@ -87,12 +87,12 @@ class CreateMachineSteps extends ScalaDsl with EN {
       context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
 
     val request = context.createMachineRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    check { (app: TestApp, machine: MachineWithoutId) =>
+    check { (app: TestApp, machineToAdd: MachineWithoutId) =>
       val shouldBeTrue: IO[Boolean] = for {
-        prev <- app.state
-        newMachine <- app.createMachine(request(machine)).output.get
-        next <- app.state
-      } yield validator(machine, prev, newMachine, next)
+        appStateBeforeOperation <- app.state
+        addedMachine <- app.createMachine(request(machineToAdd)).output.get
+        appStateAfterOperation <- app.state
+      } yield validator(machineToAdd, appStateBeforeOperation, addedMachine, appStateAfterOperation)
 
       shouldBeTrue.unsafeRunSync()
     }

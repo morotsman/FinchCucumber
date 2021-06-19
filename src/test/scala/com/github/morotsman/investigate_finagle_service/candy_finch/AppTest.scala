@@ -4,8 +4,6 @@ import cats.effect.IO
 import cats.effect.concurrent.Ref
 import com.twitter.finagle.http.Status
 import io.circe.generic.auto._
-import io.finch
-import io.finch.Application.Json
 import io.finch._
 import io.finch.circe._
 import io.finch.internal.DummyExecutionContext
@@ -115,7 +113,7 @@ class AppTest extends AnyFlatSpec with Matchers {
   }
 
   def machineUnknown(id: Int, prev: AppState): Boolean =
-    prev.store.get(id).isEmpty
+    !prev.store.contains(id)
 
   def machineInWrongState(id: Int, prev: AppState, command: Input): Boolean = command match {
     case Turn =>
@@ -127,10 +125,10 @@ class AppTest extends AnyFlatSpec with Matchers {
   def isUnlocked(id: Int, prevState: AppState, nextState: AppState): Boolean = (for {
     prev <- prevState.store.get(id)
     next <- nextState.store.get(id)
-    if (prev.locked && !next.locked)
-    if (prev.candies > 0 && next.candies == prev.candies && next.coins == prev.coins + 1)
+    if prev.locked && !next.locked
+    if prev.candies > 0 && next.candies == prev.candies && next.coins == prev.coins + 1
     if sameId(prevState, nextState)
-    if (prevState.store.filter(kv => kv._1 != id) == nextState.store.filter(kv => kv._1 != id))
+    if prevState.store.filter(kv => kv._1 != id) == nextState.store.filter(kv => kv._1 != id)
   } yield true).getOrElse(false)
 
   it should "turn" in {
@@ -159,10 +157,10 @@ class AppTest extends AnyFlatSpec with Matchers {
   def returnsCandy(id: Int, prevState: AppState, nextState: AppState): Boolean = (for {
     prev <- prevState.store.get(id)
     next <- nextState.store.get(id)
-    if (!prev.locked && next.locked)
-    if (prev.candies - 1 == next.candies && prev.coins == next.coins)
+    if !prev.locked && next.locked
+    if prev.candies - 1 == next.candies && prev.coins == next.coins
     if sameId(prevState, nextState)
-    if (prevState.store.filter(kv => kv._1 != id) == nextState.store.filter(kv => kv._1 != id))
+    if prevState.store.filter(kv => kv._1 != id) == nextState.store.filter(kv => kv._1 != id)
   } yield true).getOrElse(false)
 
 }
