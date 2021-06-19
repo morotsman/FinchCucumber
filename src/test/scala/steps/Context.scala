@@ -2,7 +2,7 @@ package steps
 
 import io.finch.Application.Json
 import io.finch.Input
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
 
 case class Context(
                     appGenerator: Option[Arbitrary[TestApp]],

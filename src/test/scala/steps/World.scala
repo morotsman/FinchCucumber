@@ -9,9 +9,10 @@ object World {
 }
 
 class World extends ScalaDsl {
+
   import steps.World.spec
 
-  Before { scenario: Scenario =>
+  Before { _: Scenario =>
     spec = Spec(Context.emptyContext)
   }
 }

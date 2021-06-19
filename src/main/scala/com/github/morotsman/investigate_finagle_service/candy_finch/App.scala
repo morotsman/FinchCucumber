@@ -7,7 +7,6 @@ import com.twitter.finagle.http.{Request, Response, Status}
 import io.circe.generic.auto._
 import io.finch._
 import io.finch.circe._
-import shapeless.HNil
 
 
 class App(
@@ -46,7 +45,7 @@ class App(
       val result = for {
         machine <- store.get(id).toRight(new NoSuchElementException)
         newMachine <- CandyRule.applyRule(input)(machine)
-      } yield (newMachine)
+      } yield newMachine
 
       result match {
         case Right(m) => (store + (id -> m), Ok(m))
