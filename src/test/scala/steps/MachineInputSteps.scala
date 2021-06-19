@@ -17,15 +17,19 @@ class MachineInputSteps extends ScalaDsl with EN {
     })
   }
 
+  // TODO will be rejected for the wrong reason when inserting coin in unlocked machine
+  // TODO since we add an id that not exists
   Then("""the coin should be rejected""") { () =>
     spec.validate(context => {
       implicit val app: Arbitrary[TestApp] =
         context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
+      implicit val action = context.insertCoinRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+
       check { (app: TestApp) =>
         val shouldBeTrue = for {
           prev <- app.state
           id = prev.id + 1
-          result <- app.insertCoin(Input.put(s"/machine/${id}/coin")).output.get
+          result <- app.insertCoin(action(id)).output.get
           next <- app.state
         } yield result.status match {
           case Status.NotFound =>

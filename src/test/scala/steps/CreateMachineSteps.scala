@@ -85,8 +85,8 @@ class CreateMachineSteps extends ScalaDsl with EN {
       context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =
       context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-
     val request = context.createMachineRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+
     check { (app: TestApp, machineToAdd: MachineWithoutId) =>
       val shouldBeTrue: IO[Boolean] = for {
         appStateBeforeOperation <- app.state
