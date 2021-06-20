@@ -1,10 +1,14 @@
 package steps
 
-import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, MachineInput, Turn}
+import cats._
+import cats.instances._
+import cats.effect.IO
+import cats.implicits.{catsStdInstancesForOption, catsSyntaxApplicativeId, toTraverseOps}
+import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, MachineInput, MachineState, Turn}
 import com.twitter.finagle.http.Status
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Application, Input}
-import org.scalacheck.Arbitrary
+import io.finch.{Input, Output}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatestplus.scalacheck.Checkers.check
 import steps.World.spec
 import steps.helpers.PrerequisiteException
@@ -13,68 +17,111 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
     spec.add(context => {
-      context.copy(insertCoinRequest = Some(id => Input.put(s"/machine/$id/coin")))
+      context.copy(insertCoinRequest2 =
+        Some((machine, testApp) => appState => {
+          val unknownId = appState.id + 1
+          val input = Input.put(s"/machine/$unknownId/coin")
+          val output = testApp.insertCoin(input).output
+          output.map(_.map(v => (machine.withId(unknownId), v)))
+        }))
     })
   }
 
-  // TODO will be rejected for the wrong reason when inserting coin in unlocked machine
-  // TODO since we add an id that not exists
-  Then("""the coin should be rejected""") { () =>
+  private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
+    case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
+    case None => Arbitrary(Gen.oneOf(None, None))
+  }
+
+  Then("""the coin should be rejected refactor""") { () =>
     spec.validate(context => {
-      implicit val app: Arbitrary[TestApp] =
-        context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-      implicit val action = context.insertCoinRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+      implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
+      implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
+      val action = context.insertCoinRequest2
 
-      check { (app: TestApp) =>
-        val shouldBeTrue = for {
-          prev <- app.state
-          id = prev.id + 1
-          result <- app.insertCoin(action(id)).output.get
-          next <- app.state
-        } yield result.status match {
-          case Status.NotFound =>
-            stateUnChanged(prev, next) && machineUnknown(id, prev)
-          case Status.BadRequest =>
-            stateUnChanged(prev, next) && machineInWrongState(id, prev, Coin)
-          case _ => false
-        }
+      check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
+        val shouldBeTrue: Option[IO[Option[Boolean]]] = for {
+          myApp <- app
+          myMachine <- randomMachine
+          myAction <- action
+        } yield test(myApp, myAction(myMachine, myApp))
 
-        shouldBeTrue.unsafeRunSync()
+        shouldBeTrue
+          .getOrElse(throw new RuntimeException("Something is missing in the setup"))
+          .unsafeRunSync()
+          .getOrElse(throw new RuntimeException("Something is missing in the setup"))
       }
     })
+
+    spec.value().unsafeRunSync()
   }
 
-  def machineUnknown(id: Int, prev: AppState): Boolean =
+  private def test(
+                    testApp: TestApp,
+                    output: AppState => Option[IO[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = for {
+    prevAppState <- testApp.state
+    machineAndOutput <- output(prevAppState).sequence
+    nextAppState <- testApp.state
+  } yield machineAndOutput.map(mo => mo._2.status match {
+    case Status.NotFound =>
+      stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
+    case Status.BadRequest =>
+      stateUnChanged(prevAppState, nextAppState) && machineInWrongState(mo._1.id, prevAppState, Coin)
+    case _ =>
+      false
+  })
+
+
+  private def machineUnknown(id: Int, prev: AppState): Boolean =
     !prev.store.contains(id)
 
-  private def stateUnChanged(prev: AppState, next: AppState): Boolean =
-    sameId(prev, next) && storeSame(prev, next)
+  private def stateUnChanged(prev: AppState, next: AppState): Boolean = {
+    val unchanged = sameId(prev, next) && storeSame(prev, next)
+    println("stateUnChanged: " + unchanged)
+    unchanged
+  }
 
-  private def sameId(prev: AppState, next: AppState): Boolean =
-    prev.id == next.id
+  private def sameId(prev: AppState, next: AppState): Boolean = {
+    val sameId = prev.id == next.id
+    println("sameId: " + sameId)
+    sameId
+  }
 
   private def storeSame(prev: AppState, next: AppState): Boolean =
     prev.store == next.store
 
   def machineInWrongState(id: Int, prev: AppState, command: MachineInput): Boolean = command match {
     case Turn =>
+      println("kommer hit 1")
       prev.store(id).locked || prev.store(id).candies <= 0
     case Coin =>
-      !prev.store(id).locked || prev.store(id).candies <= 0
+      println("kommer hit 2")
+      val state = !prev.store(id).locked || prev.store(id).candies <= 0
+      println("state: " + state)
+      state
   }
 
-  When("""a coin is inserted in a locked candy machine""") { () =>
-    // Write code here that turns the phrase above into concrete actions
-    throw new io.cucumber.scala.PendingException()
+  When("""a coin is inserted in a locked candy machine""") {
+    () =>
+      // Write code here that turns the phrase above into concrete actions
+      throw new io.cucumber.scala.PendingException()
   }
 
-  Then("""the candy machine should be unlocked""") { () =>
-    // Write code here that turns the phrase above into concrete actions
-    throw new io.cucumber.scala.PendingException()
+  Then("""the candy machine should be unlocked""") {
+    () =>
+      // Write code here that turns the phrase above into concrete actions
+      throw new io.cucumber.scala.PendingException()
   }
 
-  When("""a coin is inserted in a unlocked candy machine""") { () =>
-    // Write code here that turns the phrase above into concrete actions
-    throw new io.cucumber.scala.PendingException()
+  When("""a coin is inserted in a unlocked candy machine""") {
+    () =>
+      println("check it")
+      spec.add(context => {
+        context.copy(insertCoinRequest = Some(appState => {
+          appState.store.find(_._2.locked).map(im =>
+            (Input.put(s"/machine/${
+              im._1
+            }/coin"), im._1))
+        }))
+      })
   }
 }

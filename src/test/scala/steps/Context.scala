@@ -1,7 +1,9 @@
 package steps
 
+import cats.effect.IO
+import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.finch.Application.Json
-import io.finch.Input
+import io.finch.{Input, Output}
 import org.scalacheck.Arbitrary
 
 case class Context(
@@ -9,9 +11,10 @@ case class Context(
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     createMachineRequest: Option[Input.Body[Json]],
                     getMachinesRequest: Option[Input],
-                    insertCoinRequest: Option[Int => Input],
+                    insertCoinRequest: Option[AppState => Option[(Input, Int)]],
+                    insertCoinRequest2: Option[(MachineWithoutId, TestApp) => AppState => Option[IO[(MachineState, Output[MachineState])]]],
   )
 
 object Context {
-  def emptyContext: Context = Context(None, None, None, None, None)
+  def emptyContext: Context = Context(None, None, None, None, None, None)
 }
