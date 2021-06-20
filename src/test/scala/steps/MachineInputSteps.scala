@@ -21,38 +21,38 @@ class MachineInputSteps extends ScalaDsl with EN {
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
           val input = Input.put(s"/machine/$unknownId/coin")
-          val output = testApp.insertCoin(input).output
+          val output: Option[IO[Output[MachineState]]] = testApp.insertCoin(input).output
           output.map(_.map(v => (machine.withId(unknownId), v)))
         }))
     })
   }
 
-  private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
-    case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
-    case None => Arbitrary(Gen.oneOf(None, None))
-  }
-
-  Then("""the coin should be rejected refactor""") { () =>
+  Then("""the coin should be rejected""") { () =>
     spec.validate(context => {
       implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
       implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
       val action = context.insertCoinRequest2
 
       check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
-        val shouldBeTrue: Option[IO[Option[Boolean]]] = for {
+        val shouldBeTrue = for {
           myApp <- app
           myMachine <- randomMachine
           myAction <- action
         } yield test(myApp, myAction(myMachine, myApp))
 
-        shouldBeTrue
-          .getOrElse(throw new RuntimeException("Something is missing in the setup"))
-          .unsafeRunSync()
-          .getOrElse(throw new RuntimeException("Something is missing in the setup"))
+        (for {
+          iob <- shouldBeTrue
+          ob <- iob.unsafeRunSync()
+        } yield ob).getOrElse(throw new RuntimeException("Something is missing in the setup"))
       }
     })
 
     spec.value().unsafeRunSync()
+  }
+
+  private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
+    case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
+    case None => Arbitrary(Gen.oneOf(None, None))
   }
 
   private def test(
@@ -113,15 +113,17 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   When("""a coin is inserted in a unlocked candy machine""") {
-    () =>
-      println("check it")
-      spec.add(context => {
-        context.copy(insertCoinRequest = Some(appState => {
-          appState.store.find(_._2.locked).map(im =>
-            (Input.put(s"/machine/${
-              im._1
-            }/coin"), im._1))
+    spec.add(context => {
+      context.copy(insertCoinRequest2 =
+        Some((machine, testApp) => appState => {
+
+
+          appState.store.find(_._2.locked).flatMap(im => {
+            val input = Input.put(s"/machine/${im._1}/coin")
+            val output: Option[IO[Output[MachineState]]] = testApp.insertCoin(input).output
+            output.map(_.map(v => (im._2, v)))
+          })
         }))
-      })
+    })
   }
 }

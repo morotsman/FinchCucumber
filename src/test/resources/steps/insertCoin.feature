@@ -4,7 +4,7 @@ Feature: Insert a coin in the candy machine
     Given a park of candy machines
     And a candy machine
     When the customer inserts a coin in a candy machine that has not been added to the park
-    Then the coin should be rejected refactor
+    Then the coin should be rejected
 
   Scenario: Insert a coin in a locked machine
     Given a park of candy machines
