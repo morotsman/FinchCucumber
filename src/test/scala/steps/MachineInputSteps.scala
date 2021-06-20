@@ -25,7 +25,7 @@ class MachineInputSteps extends ScalaDsl with EN {
           val unknownId = appState.id + 1
           val input = Input.put(s"/machine/$unknownId/coin")
           val output = OptionT(testApp.insertCoin(input).output.sequence)
-          output.map((machine.withId(unknownId), _)).value
+          output.map(om => (machine.withId(unknownId), om)).value
         }))
     })
   }
@@ -109,7 +109,7 @@ class MachineInputSteps extends ScalaDsl with EN {
   When("""a coin is inserted in a unlocked candy machine""") {
     spec.add(context => {
       context.copy(insertCoinRequest2 =
-        Some(value = (machine, testApp) => appState => {
+        Some(value = (machine, testApp) => _ => {
           val createMachineRequest = Input.post("/machine").withBody[Application.Json]
           val createLockedMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
 
