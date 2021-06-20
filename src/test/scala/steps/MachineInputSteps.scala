@@ -1,17 +1,20 @@
 package steps
 
-import cats._
-import cats.instances._
-import cats.effect.IO
-import cats.implicits.{catsStdInstancesForOption, catsSyntaxApplicativeId, toTraverseOps}
-import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, MachineInput, MachineState, Turn}
+import cats.data.OptionT
+import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
+import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, MachineInput, Turn}
 import com.twitter.finagle.http.Status
+import org.scalacheck.Gen
+import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Input, Output}
-import org.scalacheck.{Arbitrary, Gen}
+import io.finch.{Application, Input, Output}
 import org.scalatestplus.scalacheck.Checkers.check
 import steps.World.spec
-import steps.helpers.PrerequisiteException
+import cats.effect.IO
+import io.circe.generic.auto._
+import io.finch.circe._
+import org.scalacheck.Arbitrary
+import org.scalatestplus.scalacheck.Checkers._
 
 class MachineInputSteps extends ScalaDsl with EN {
 
@@ -21,8 +24,8 @@ class MachineInputSteps extends ScalaDsl with EN {
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
           val input = Input.put(s"/machine/$unknownId/coin")
-          val output: Option[IO[Output[MachineState]]] = testApp.insertCoin(input).output
-          output.map(_.map(v => (machine.withId(unknownId), v)))
+          val output = OptionT(testApp.insertCoin(input).output.sequence)
+          output.map((machine.withId(unknownId), _)).value
         }))
     })
   }
@@ -57,47 +60,38 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   private def test(
                     testApp: TestApp,
-                    output: AppState => Option[IO[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = for {
-    prevAppState <- testApp.state
-    machineAndOutput <- output(prevAppState).sequence
-    nextAppState <- testApp.state
-  } yield machineAndOutput.map(mo => mo._2.status match {
-    case Status.NotFound =>
-      stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
-    case Status.BadRequest =>
-      stateUnChanged(prevAppState, nextAppState) && machineInWrongState(mo._1.id, prevAppState, Coin)
-    case _ =>
-      false
-  })
-
+                    action: AppState => IO[Option[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = {
+    for {
+      prevAppState <- testApp.state
+      machineAndOutput <- action(prevAppState)
+      nextAppState <- testApp.state
+    } yield machineAndOutput.map(mo => mo._2.status match {
+      case Status.NotFound =>
+        stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
+      case Status.BadRequest =>
+        machineInWrongState(mo._1.id, nextAppState, Coin)
+      case _ =>
+        false
+    })
+  }
 
   private def machineUnknown(id: Int, prev: AppState): Boolean =
     !prev.store.contains(id)
 
-  private def stateUnChanged(prev: AppState, next: AppState): Boolean = {
-    val unchanged = sameId(prev, next) && storeSame(prev, next)
-    println("stateUnChanged: " + unchanged)
-    unchanged
-  }
+  private def stateUnChanged(prev: AppState, next: AppState): Boolean =
+    sameId(prev, next) && storeSame(prev, next)
 
-  private def sameId(prev: AppState, next: AppState): Boolean = {
-    val sameId = prev.id == next.id
-    println("sameId: " + sameId)
-    sameId
-  }
+  private def sameId(prev: AppState, next: AppState): Boolean =
+    prev.id == next.id
 
   private def storeSame(prev: AppState, next: AppState): Boolean =
     prev.store == next.store
 
   def machineInWrongState(id: Int, prev: AppState, command: MachineInput): Boolean = command match {
     case Turn =>
-      println("kommer hit 1")
       prev.store(id).locked || prev.store(id).candies <= 0
     case Coin =>
-      println("kommer hit 2")
-      val state = !prev.store(id).locked || prev.store(id).candies <= 0
-      println("state: " + state)
-      state
+      !prev.store(id).locked || prev.store(id).candies <= 0
   }
 
   When("""a coin is inserted in a locked candy machine""") {
@@ -115,14 +109,17 @@ class MachineInputSteps extends ScalaDsl with EN {
   When("""a coin is inserted in a unlocked candy machine""") {
     spec.add(context => {
       context.copy(insertCoinRequest2 =
-        Some((machine, testApp) => appState => {
+        Some(value = (machine, testApp) => appState => {
+          val createMachineRequest = Input.post("/machine").withBody[Application.Json]
+          val createLockedMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
 
+          val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
+          val unlockMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
 
-          appState.store.find(_._2.locked).flatMap(im => {
-            val input = Input.put(s"/machine/${im._1}/coin")
-            val output: Option[IO[Output[MachineState]]] = testApp.insertCoin(input).output
-            output.map(_.map(v => (im._2, v)))
-          })
+          (for {
+            lockedMachine <- createLockedMachine
+            output <- unlockMachine(lockedMachine.value.id)
+          } yield (lockedMachine.value, output)).value
         }))
     })
   }

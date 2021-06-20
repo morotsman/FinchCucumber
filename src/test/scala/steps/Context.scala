@@ -12,7 +12,7 @@ case class Context(
                     createMachineRequest: Option[Input.Body[Json]],
                     getMachinesRequest: Option[Input],
                     insertCoinRequest: Option[AppState => Option[(Input, Int)]],
-                    insertCoinRequest2: Option[(MachineWithoutId, TestApp) => AppState => Option[IO[(MachineState, Output[MachineState])]]],
+                    insertCoinRequest2: Option[(MachineWithoutId, TestApp) => AppState => IO[Option[(MachineState, Output[MachineState])]]],
   )
 
 object Context {
