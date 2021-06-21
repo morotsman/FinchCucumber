@@ -89,7 +89,6 @@ class MachineInputSteps extends ScalaDsl with EN {
       case Status.NotFound =>
         stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
       case Status.BadRequest =>
-        println(mo._1)
         stateUnChanged(addMachineToState(mo._1, prevAppState), nextAppState) && machineInWrongState(mo._1.id, nextAppState, Coin)
       case Status.Ok =>
         isUnlocked(mo._1.id, addMachineToState(mo._1, prevAppState), nextAppState)
