@@ -23,9 +23,9 @@ class MachineInputSteps extends ScalaDsl with EN {
       context.copy(insertCoinRequest =
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
-          val input = Input.put(s"/machine/$unknownId/coin")
-          val output = OptionT(testApp.insertCoin(input).output.sequence)
-          output.map(om => (machine.withId(unknownId), om)).value
+          val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
+          val result = OptionT(testApp.insertCoin(insertCoinRequest).output.sequence)
+          result.map(om => (machine.withId(unknownId), om)).value
         }))
     })
   }
@@ -38,17 +38,15 @@ class MachineInputSteps extends ScalaDsl with EN {
           val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
 
           val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
-          val unlockMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
+          val insertCoinInMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
 
           (for {
-            lockedMachine <- createMachine
-            output <- unlockMachine(lockedMachine.value.id)
-          } yield (lockedMachine.value, output)).value
+            machine <- createMachine
+            result <- insertCoinInMachine(machine.value.id)
+          } yield (machine.value, result)).value
         }))
     })
   }
-
-
 
   Then("""the coin should be rejected""") { () =>
     spec.validate(context => {
@@ -90,14 +88,11 @@ class MachineInputSteps extends ScalaDsl with EN {
     })
   }
 
-
   Then("""the candy machine should be unlocked""") {
     () =>
       // Write code here that turns the phrase above into concrete actions
       throw new io.cucumber.scala.PendingException()
   }
-
-
 
   private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
     case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
