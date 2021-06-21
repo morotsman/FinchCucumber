@@ -14,6 +14,7 @@ import cats.effect.IO
 import io.circe.generic.auto._
 import io.finch.circe._
 import org.scalacheck.Arbitrary
+import org.scalatest.Assertion
 import org.scalatestplus.scalacheck.Checkers._
 
 class MachineInputSteps extends ScalaDsl with EN {
@@ -49,26 +50,32 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   Then("""the coin should be rejected""") { () =>
-    spec.validate(context => {
-      implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
-      implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
-      val action = context.insertCoinRequest
-
-      check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
-        val shouldBeTrue = for {
-          myApp <- app
-          myMachine <- randomMachine
-          myAction <- action
-        } yield test(myApp, myAction(myMachine, myApp))
-
-        (for {
-          iob <- shouldBeTrue
-          ob <- iob.unsafeRunSync()
-        } yield ob).getOrElse(throw new RuntimeException("Something is missing in the setup"))
-      }
-    })
-
+    spec.validate(context => checkIt(context))
     spec.value().unsafeRunSync()
+  }
+
+  Then("""the candy machine should be unlocked""") { () =>
+    spec.validate(context => checkIt(context))
+    spec.value().unsafeRunSync()
+  }
+
+  def checkIt(context: Context): Assertion = {
+    implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
+    implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
+    val action = context.insertCoinRequest
+
+    check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
+      val shouldBeTrue = for {
+        myApp <- app
+        myMachine <- randomMachine
+        myAction <- action
+      } yield test(myApp, myAction(myMachine, myApp))
+
+      (for {
+        iob <- shouldBeTrue
+        ob <- iob.unsafeRunSync()
+      } yield ob).getOrElse(throw new RuntimeException("Something is missing in the setup"))
+    }
   }
 
   private def test(
@@ -80,19 +87,25 @@ class MachineInputSteps extends ScalaDsl with EN {
       nextAppState <- testApp.state
     } yield machineAndOutput.map(mo => mo._2.status match {
       case Status.NotFound =>
+        println("********NotFound*********")
         stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
       case Status.BadRequest =>
-        machineInWrongState(mo._1.id, nextAppState, Coin)
+        println("********BadRequest*********")
+        stateUnChanged(addMachineToState(mo._1, prevAppState), nextAppState) && machineInWrongState(mo._1.id, nextAppState, Coin)
+      case Status.Ok =>
+        println("********Ok*********")
+        isUnlocked(mo._1.id, addMachineToState(mo._1, prevAppState), nextAppState)
       case _ =>
         false
     })
   }
 
-  Then("""the candy machine should be unlocked""") {
-    () =>
-      // Write code here that turns the phrase above into concrete actions
-      throw new io.cucumber.scala.PendingException()
-  }
+  def addMachineToState(m: MachineState, app: AppState): AppState =
+    app.copy(
+      id = app.id + 1,
+      store = app.store + (m.id -> m)
+    )
+
 
   private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
     case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
@@ -117,5 +130,14 @@ class MachineInputSteps extends ScalaDsl with EN {
     case Coin =>
       !prev.store(id).locked || prev.store(id).candies <= 0
   }
+
+  def isUnlocked(id: Int, prevState: AppState, nextState: AppState): Boolean = (for {
+    prev <- prevState.store.get(id)
+    next <- nextState.store.get(id)
+    if prev.locked && !next.locked
+    if prev.candies > 0 && next.candies == prev.candies && next.coins == prev.coins + 1
+    if sameId(prevState, nextState)
+    if prevState.store.filter(kv => kv._1 != id) == nextState.store.filter(kv => kv._1 != id)
+  } yield true).getOrElse(false)
 
 }

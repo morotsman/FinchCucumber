@@ -58,13 +58,13 @@ class CommonSteps extends ScalaDsl with EN {
 
   Given("""an unlocked machine""") { () =>
     spec.add(context => {
-      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(true))))
+      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(unlocked = true))))
     })
   }
 
   Given("""an locked machine""") { () =>
     spec.add(context => {
-      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(true))))
+      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(locked = true))))
     })
   }
 }
