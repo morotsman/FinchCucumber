@@ -25,9 +25,11 @@ case class MachineWithoutId(locked: Boolean, candies: Int, coins: Int) {
 }
 
 class CommonSteps extends ScalaDsl with EN {
-  private def genMachineWithoutId(unlocked: Boolean = false): Gen[MachineWithoutId] = for {
+  private def genMachineWithoutId(unlocked: Boolean = false, locked: Boolean = false): Gen[MachineWithoutId] = for {
     locked <- if (unlocked)
       Gen.oneOf(false, false)
+    else if(locked)
+      Gen.oneOf(true, true)
     else
       Gen.oneOf(true, false)
     candies <- Gen.choose(0, 3)
@@ -55,6 +57,12 @@ class CommonSteps extends ScalaDsl with EN {
   }
 
   Given("""an unlocked machine""") { () =>
+    spec.add(context => {
+      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(true))))
+    })
+  }
+
+  Given("""an locked machine""") { () =>
     spec.add(context => {
       context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(true))))
     })

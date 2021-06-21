@@ -11,10 +11,9 @@ case class Context(
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     createMachineRequest: Option[Input.Body[Json]],
                     getMachinesRequest: Option[Input],
-                    insertCoinRequest: Option[AppState => Option[(Input, Int)]],
-                    insertCoinRequest2: Option[(MachineWithoutId, TestApp) => AppState => IO[Option[(MachineState, Output[MachineState])]]],
+                    insertCoinRequest: Option[(MachineWithoutId, TestApp) => AppState => IO[Option[(MachineState, Output[MachineState])]]],
   )
 
 object Context {
-  def emptyContext: Context = Context(None, None, None, None, None, None)
+  def emptyContext: Context = Context(None, None, None, None, None)
 }

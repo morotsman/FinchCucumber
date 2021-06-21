@@ -20,7 +20,7 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
     spec.add(context => {
-      context.copy(insertCoinRequest2 =
+      context.copy(insertCoinRequest =
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
           val input = Input.put(s"/machine/$unknownId/coin")
@@ -30,11 +30,31 @@ class MachineInputSteps extends ScalaDsl with EN {
     })
   }
 
+  When("""a coin is inserted in the candy machine""") {
+    spec.add(context => {
+      context.copy(insertCoinRequest =
+        Some(value = (machine, testApp) => _ => {
+          val createMachineRequest = Input.post("/machine").withBody[Application.Json]
+          val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
+
+          val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
+          val unlockMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
+
+          (for {
+            lockedMachine <- createMachine
+            output <- unlockMachine(lockedMachine.value.id)
+          } yield (lockedMachine.value, output)).value
+        }))
+    })
+  }
+
+
+
   Then("""the coin should be rejected""") { () =>
     spec.validate(context => {
       implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
       implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
-      val action = context.insertCoinRequest2
+      val action = context.insertCoinRequest
 
       check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
         val shouldBeTrue = for {
@@ -53,11 +73,6 @@ class MachineInputSteps extends ScalaDsl with EN {
     spec.value().unsafeRunSync()
   }
 
-  private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
-    case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
-    case None => Arbitrary(Gen.oneOf(None, None))
-  }
-
   private def test(
                     testApp: TestApp,
                     action: AppState => IO[Option[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = {
@@ -73,6 +88,20 @@ class MachineInputSteps extends ScalaDsl with EN {
       case _ =>
         false
     })
+  }
+
+
+  Then("""the candy machine should be unlocked""") {
+    () =>
+      // Write code here that turns the phrase above into concrete actions
+      throw new io.cucumber.scala.PendingException()
+  }
+
+
+
+  private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
+    case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
+    case None => Arbitrary(Gen.oneOf(None, None))
   }
 
   private def machineUnknown(id: Int, prev: AppState): Boolean =
@@ -94,33 +123,4 @@ class MachineInputSteps extends ScalaDsl with EN {
       !prev.store(id).locked || prev.store(id).candies <= 0
   }
 
-  When("""a coin is inserted in a locked candy machine""") {
-    () =>
-      // Write code here that turns the phrase above into concrete actions
-      throw new io.cucumber.scala.PendingException()
-  }
-
-  Then("""the candy machine should be unlocked""") {
-    () =>
-      // Write code here that turns the phrase above into concrete actions
-      throw new io.cucumber.scala.PendingException()
-  }
-
-  When("""a coin is inserted in a unlocked candy machine""") {
-    spec.add(context => {
-      context.copy(insertCoinRequest2 =
-        Some(value = (machine, testApp) => _ => {
-          val createMachineRequest = Input.post("/machine").withBody[Application.Json]
-          val createLockedMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
-
-          val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
-          val unlockMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
-
-          (for {
-            lockedMachine <- createLockedMachine
-            output <- unlockMachine(lockedMachine.value.id)
-          } yield (lockedMachine.value, output)).value
-        }))
-    })
-  }
 }

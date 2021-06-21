@@ -8,11 +8,12 @@ Feature: Insert a coin in the candy machine
 
   Scenario: Insert a coin in a locked machine
     Given a park of candy machines
-    When a coin is inserted in a locked candy machine
+    And an locked machine
+    When a coin is inserted in the candy machine
     Then the candy machine should be unlocked
 
   Scenario: Insert a coin in an unlocked machine
     Given a park of candy machines
     And an unlocked machine
-    When a coin is inserted in a unlocked candy machine
+    When a coin is inserted in the candy machine
     Then the coin should be rejected
