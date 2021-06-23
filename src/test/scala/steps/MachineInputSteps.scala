@@ -21,7 +21,7 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
     spec.add(context => {
-      context.copy(insertCoinRequest =
+      context.copy(request =
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
           val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
@@ -33,7 +33,7 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   When("""a coin is inserted in the candy machine""") {
     spec.add(context => {
-      context.copy(insertCoinRequest =
+      context.copy(request =
         Some(value = (machine, testApp) => _ => {
           val createMachineRequest = Input.post("/machine").withBody[Application.Json]
           val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
@@ -62,7 +62,7 @@ class MachineInputSteps extends ScalaDsl with EN {
   def validate(context: Context): Assertion = {
     implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
     implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
-    val action = context.insertCoinRequest
+    val action = context.request
 
     check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
       val shouldBeTrue = for {
