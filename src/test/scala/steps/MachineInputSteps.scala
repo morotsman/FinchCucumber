@@ -62,14 +62,14 @@ class MachineInputSteps extends ScalaDsl with EN {
   def validate(context: Context): Assertion = {
     implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
     implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
-    val action = context.request
+    val request = context.request
 
     check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
       val shouldBeTrue = for {
         myApp <- app
         myMachine <- randomMachine
-        myAction <- action
-      } yield test(myApp, myAction(myMachine, myApp))
+        myRequest <- request
+      } yield test(myApp, myRequest(myMachine, myApp))
 
       (for {
         iob <- shouldBeTrue
@@ -80,10 +80,10 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   private def test(
                     testApp: TestApp,
-                    action: AppState => IO[Option[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = {
+                    request: AppState => IO[Option[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = {
     for {
       prevAppState <- testApp.state
-      machineAndOutput <- action(prevAppState)
+      machineAndOutput <- request(prevAppState)
       nextAppState <- testApp.state
     } yield machineAndOutput.map(mo => mo._2.status match {
       case Status.NotFound =>
