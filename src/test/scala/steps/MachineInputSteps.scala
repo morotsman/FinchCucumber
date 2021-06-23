@@ -50,16 +50,16 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   Then("""the coin should be rejected""") { () =>
-    spec.validate(context => checkIt(context))
+    spec.validate(context => validate(context))
     spec.value().unsafeRunSync()
   }
 
   Then("""the candy machine should be unlocked""") { () =>
-    spec.validate(context => checkIt(context))
+    spec.validate(context => validate(context))
     spec.value().unsafeRunSync()
   }
 
-  def checkIt(context: Context): Assertion = {
+  def validate(context: Context): Assertion = {
     implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
     implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
     val action = context.insertCoinRequest
