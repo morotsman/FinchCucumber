@@ -15,6 +15,7 @@ import io.finch.circe._
 import org.scalacheck.Arbitrary
 import org.scalatest.Assertion
 import org.scalatestplus.scalacheck.Checkers._
+import steps.helpers.PrerequisiteException
 
 class MachineInputSteps extends ScalaDsl with EN {
 
@@ -68,7 +69,7 @@ class MachineInputSteps extends ScalaDsl with EN {
       (for {
         iob <- shouldBeTrue
         ob <- iob.unsafeRunSync()
-      } yield ob).getOrElse(throw new RuntimeException("Something is missing in the setup"))
+      } yield ob).getOrElse(throw new PrerequisiteException("Something is missing in the setup"))
     }
   }
 
