@@ -55,41 +55,31 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   def validate(context: Context): Assertion = {
-    implicit val machine: Arbitrary[Option[MachineWithoutId]] = sequence(context.machineGenerator)
-    implicit val app: Arbitrary[Option[TestApp]] = sequence(context.appGenerator)
-    val request = context.request
+    implicit val machine: Arbitrary[MachineWithoutId] =
+      context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
+    implicit val app: Arbitrary[TestApp] =
+      context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
+    val request =
+      context.request.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
 
-    check { (app: Option[TestApp], randomMachine: Option[MachineWithoutId]) =>
-      val shouldBeTrue = for {
-        myApp <- app
-        myMachine <- randomMachine
-        myRequest <- request
-      } yield test(myApp, myRequest(myMachine, myApp))
-
-      (for {
-        iob <- shouldBeTrue
-        ob <- iob.unsafeRunSync()
-      } yield ob).getOrElse(throw new PrerequisiteException("Something is missing in the setup"))
+    check { (app: TestApp, randomMachine: MachineWithoutId) =>
+      val result = for {
+        prevAppState <- app.state
+        machineAndOutput <- request(randomMachine, app)(prevAppState)
+        nextAppState <- app.state
+      } yield machineAndOutput.map(mo => mo._2.status match {
+        case Status.NotFound =>
+          stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
+        case Status.BadRequest =>
+          stateUnChanged(addMachineToState(mo._1, prevAppState), nextAppState) && machineInWrongState(mo._1.id, nextAppState, Coin)
+        case Status.Ok =>
+          isUnlocked(mo._1.id, addMachineToState(mo._1, prevAppState), nextAppState)
+        case _ =>
+          false
+      })
+      result.unsafeRunSync()
+        .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
     }
-  }
-
-  private def test(
-                    testApp: TestApp,
-                    request: AppState => IO[Option[(MachineState, Output[MachineState])]]): IO[Option[Boolean]] = {
-    for {
-      prevAppState <- testApp.state
-      machineAndOutput <- request(prevAppState)
-      nextAppState <- testApp.state
-    } yield machineAndOutput.map(mo => mo._2.status match {
-      case Status.NotFound =>
-        stateUnChanged(prevAppState, nextAppState) && machineUnknown(mo._1.id, prevAppState)
-      case Status.BadRequest =>
-        stateUnChanged(addMachineToState(mo._1, prevAppState), nextAppState) && machineInWrongState(mo._1.id, nextAppState, Coin)
-      case Status.Ok =>
-        isUnlocked(mo._1.id, addMachineToState(mo._1, prevAppState), nextAppState)
-      case _ =>
-        false
-    })
   }
 
   def addMachineToState(m: MachineState, app: AppState): AppState =
@@ -97,7 +87,6 @@ class MachineInputSteps extends ScalaDsl with EN {
       id = app.id + 1,
       store = app.store + (m.id -> m)
     )
-
 
   private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
     case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))

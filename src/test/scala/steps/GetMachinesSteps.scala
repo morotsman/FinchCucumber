@@ -16,7 +16,8 @@ class GetMachinesSteps extends ScalaDsl with EN {
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
     implicit val app: Arbitrary[TestApp] =
       World.context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-    val request = World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    val request =
+      World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
 
     check { (app: TestApp) =>
       val shouldBeTrue = for {
