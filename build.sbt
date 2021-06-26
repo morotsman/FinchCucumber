@@ -28,6 +28,8 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.1.1",
   "org.typelevel" %% "cats-effect" % "2.1.1",
 
+  "com.chuusai" %% "shapeless" % "2.3.3",
+
   // Twitter server
   "com.twitter" %% "twitter-server" % "20.12.0",
 

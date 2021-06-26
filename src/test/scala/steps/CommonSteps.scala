@@ -2,7 +2,6 @@ package steps
 
 import com.github.morotsman.investigate_finagle_service.candy_finch.{App, MachineState}
 import io.cucumber.scala.{EN, ScalaDsl}
-import steps.World.spec
 import cats.effect.IO
 import cats.effect.concurrent.Ref
 import io.finch.internal.DummyExecutionContext
@@ -45,34 +44,22 @@ class CommonSteps extends ScalaDsl with EN {
     }
 
   Given("""a park of candy machines""") { () =>
-    spec.add(context => {
-      context.copy(appGenerator = Some(Arbitrary(genTestApp)))
-    })
+    World.context = World.context.copy(appGenerator = Some(Arbitrary(genTestApp)))
   }
 
   Given("""a candy machine""") { () =>
-    spec.add(context => {
-      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId())))
-    })
+    World.context = World.context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId())))
   }
 
   Given("""an unlocked machine""") { () =>
-    spec.add(context => {
-      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(unlocked = true))))
-    })
+    World.context = World.context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(unlocked = true))))
   }
 
   Given("""an locked machine""") { () =>
-    spec.add(context => {
-      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(locked = true))))
-    })
+    World.context = World.context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(locked = true))))
   }
 
   Given("""an locked machine without candies""") { () =>
-    spec.add(context => {
-      context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(locked = true, maxCandies = 0))))
-    })
+    World.context = World.context.copy(machineGenerator = Some(Arbitrary(genMachineWithoutId(locked = true, maxCandies = 0))))
   }
-
-
 }

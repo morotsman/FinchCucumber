@@ -4,7 +4,6 @@ import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.{Application, Input, Output}
 import org.scalatestplus.scalacheck.Checkers.check
-import steps.World.spec
 import cats.effect.IO
 import io.circe.generic.auto._
 import io.finch.circe._
@@ -16,24 +15,20 @@ import steps.helpers.PrerequisiteException
 class CreateMachineSteps extends ScalaDsl with EN {
 
   When("""the candy machine is added to the park""") { () =>
-    spec.add(context => {
-      context.copy(createMachineRequest = Some(Input.post("/machine").withBody[Application.Json]))
-    })
+    World.context = World.context.copy(createMachineRequest = Some(Input.post("/machine").withBody[Application.Json]))
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
-    spec.validate(context => validateMachineCreation(context) { (_, prevAppState, addedMachine, nextAppState) =>
+    validateMachineCreation(World.context) { (_, prevAppState, addedMachine, nextAppState) =>
       prevAppState.id + 1 == nextAppState.id && !prevAppState.store.contains(addedMachine.value.id)
-    })
-    spec.value().unsafeRunSync()
+    }
   }
 
   Then("""the machine should be added to the park""") { () =>
-    spec.validate(context => validateMachineCreation(context) { (machineToAdd, prevAppState, addedMachine, nextAppState) =>
+    validateMachineCreation(World.context) { (machineToAdd, prevAppState, addedMachine, nextAppState) =>
       prevAppState.store + (prevAppState.id -> addedMachine.value) == nextAppState.store &&
         addedMachine.value == machineToAdd.withId(prevAppState.id)
-    })
-    spec.value().unsafeRunSync()
+    }
   }
 
   def validateMachineCreation(context: Context)(validator: (MachineWithoutId, AppState, Output[MachineState], AppState) => Boolean): Assertion = {

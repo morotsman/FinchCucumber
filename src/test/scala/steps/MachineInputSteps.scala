@@ -9,7 +9,6 @@ import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.{Application, Input, Output}
 import org.scalatestplus.scalacheck.Checkers.check
-import steps.World.spec
 import cats.effect.IO
 import io.circe.generic.auto._
 import io.finch.circe._
@@ -20,43 +19,38 @@ import org.scalatestplus.scalacheck.Checkers._
 class MachineInputSteps extends ScalaDsl with EN {
 
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
-    spec.add(context => {
-      context.copy(request =
+    World.context = World.context.copy(request =
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
           val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
           val result = OptionT(testApp.insertCoin(insertCoinRequest).output.sequence)
           result.map(om => (machine.withId(unknownId), om)).value
         }))
-    })
   }
 
   When("""a coin is inserted in the candy machine""") {
-    spec.add(context => {
-      context.copy(request =
-        Some(value = (machine, testApp) => _ => {
-          val createMachineRequest = Input.post("/machine").withBody[Application.Json]
-          val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
+    World.context = World.context.copy(request =
+      Some(value = (machine, testApp) => _ => {
+        val createMachineRequest = Input.post("/machine").withBody[Application.Json]
+        val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
 
-          val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
-          val insertCoinInMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
+        val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
+        val insertCoinInMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
 
-          (for {
-            machine <- createMachine
-            result <- insertCoinInMachine(machine.value.id)
-          } yield (machine.value, result)).value
-        }))
-    })
+        (for {
+          machine <- createMachine
+          result <- insertCoinInMachine(machine.value.id)
+        } yield (machine.value, result)).value
+      }))
   }
 
+
   Then("""the coin should be rejected""") { () =>
-    spec.validate(context => validate(context))
-    spec.value().unsafeRunSync()
+    validate(World.context)
   }
 
   Then("""the candy machine should be unlocked""") { () =>
-    spec.validate(context => validate(context))
-    spec.value().unsafeRunSync()
+    validate(World.context)
   }
 
   def validate(context: Context): Assertion = {
