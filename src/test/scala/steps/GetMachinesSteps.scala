@@ -1,5 +1,6 @@
 package steps
 
+import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.Input
 import org.scalatestplus.scalacheck.Checkers.check
@@ -22,12 +23,14 @@ class GetMachinesSteps extends ScalaDsl with EN {
     check { (app: TestApp) =>
       val shouldBeTrue = for {
         prev <- app.state
-        machines <- app.getMachines(request).output.get
+        machines <- app.getMachines(request).output.sequence
         next <- app.state
-      } yield
-        stateUnChanged(prev, next) && machines.value == prev.store.values.toList.sortBy(_.id)
+      } yield machines.map( ms =>
+        stateUnChanged(prev, next) && ms.value == prev.store.values.toList.sortBy(_.id)
+      )
 
       shouldBeTrue.unsafeRunSync()
+        .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
     }
 
   }

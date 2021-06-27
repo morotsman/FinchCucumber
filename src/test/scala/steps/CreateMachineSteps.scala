@@ -1,5 +1,6 @@
 package steps
 
+import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.{Application, Input, Output}
@@ -39,13 +40,16 @@ class CreateMachineSteps extends ScalaDsl with EN {
     val request = context.createMachineRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
 
     check { (app: TestApp, machineToAdd: MachineWithoutId) =>
-      val shouldBeTrue: IO[Boolean] = for {
+      val shouldBeTrue = for {
         appStateBeforeOperation <- app.state
-        addedMachine <- app.createMachine(request(machineToAdd)).output.get
+        addedMachine <- app.createMachine(request(machineToAdd)).output.sequence
         appStateAfterOperation <- app.state
-      } yield validator(machineToAdd, appStateBeforeOperation, addedMachine, appStateAfterOperation)
-
+      } yield addedMachine.map(m =>
+        validator(machineToAdd, appStateBeforeOperation, m, appStateAfterOperation)
+      )
+      
       shouldBeTrue.unsafeRunSync()
+        .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
     }
   }
 }
