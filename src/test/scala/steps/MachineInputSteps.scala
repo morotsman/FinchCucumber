@@ -4,12 +4,10 @@ import cats.data.OptionT
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, MachineInput, Turn}
 import com.twitter.finagle.http.Status
-import org.scalacheck.Gen
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Application, Input, Output}
+import io.finch.{Application, Input}
 import org.scalatestplus.scalacheck.Checkers.check
-import cats.effect.IO
 import io.circe.generic.auto._
 import io.finch.circe._
 import org.scalacheck.Arbitrary
@@ -87,11 +85,6 @@ class MachineInputSteps extends ScalaDsl with EN {
       id = app.id + 1,
       store = app.store + (m.id -> m)
     )
-
-  private def sequence[A](oa: Option[Arbitrary[A]]): Arbitrary[Option[A]] = oa match {
-    case Some(aa) => Arbitrary(aa.arbitrary.map(Some(_)))
-    case None => Arbitrary(Gen.oneOf(None, None))
-  }
 
   private def machineUnknown(id: Int, prev: AppState): Boolean =
     !prev.store.contains(id)
