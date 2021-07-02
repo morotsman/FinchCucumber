@@ -11,7 +11,7 @@ case class Context(
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     createMachineRequest: Option[Input.Body[Json]],
                     getMachinesRequest: Option[Input],
-                    machineInputRequest: Option[(MachineWithoutId, TestApp) => AppState => IO[Option[(MachineState, Output[MachineState])]]],
+                    machineInputRequest: Option[(MachineWithoutId, TestApp, AppState) => IO[Option[(MachineState, Output[MachineState])]]],
   )
 
 object Context {
