@@ -18,7 +18,7 @@ import steps.helpers.PrerequisiteException
 class MachineInputSteps extends ScalaDsl with EN {
 
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
-    World.context = World.context.copy(request =
+    World.context = World.context.copy(machineInputRequest =
         Some((machine, testApp) => appState => {
           val unknownId = appState.id + 1
           val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
@@ -28,7 +28,7 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   When("""a coin is inserted in the candy machine""") {
-    World.context = World.context.copy(request =
+    World.context = World.context.copy(machineInputRequest =
       Some(value = (machine, testApp) => _ => {
         val createMachineRequest = Input.post("/machine").withBody[Application.Json]
         val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
@@ -58,7 +58,7 @@ class MachineInputSteps extends ScalaDsl with EN {
     implicit val app: Arbitrary[TestApp] =
       context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
     val request =
-      context.request.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+      context.machineInputRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
 
     check { (app: TestApp, randomMachine: MachineWithoutId) =>
       val result = for {
