@@ -5,7 +5,6 @@ import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.{Application, Input, Output}
 import org.scalatestplus.scalacheck.Checkers.check
-import cats.effect.IO
 import io.circe.generic.auto._
 import io.finch.circe._
 import org.scalacheck.Arbitrary
