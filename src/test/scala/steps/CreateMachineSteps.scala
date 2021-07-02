@@ -20,19 +20,18 @@ class CreateMachineSteps extends ScalaDsl with EN {
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
-    validateMachineCreation(World.context) { (_, prevAppState, addedMachine, nextAppState) =>
+    validateMachineCreation(World.context) { (prevAppState, addedMachine, nextAppState) =>
       prevAppState.id + 1 == nextAppState.id && !prevAppState.store.contains(addedMachine.value.id)
     }
   }
 
   Then("""the machine should be added to the park""") { () =>
-    validateMachineCreation(World.context) { (machineToAdd, prevAppState, addedMachine, nextAppState) =>
-      prevAppState.store + (prevAppState.id -> addedMachine.value) == nextAppState.store &&
-        addedMachine.value == machineToAdd.withId(prevAppState.id)
+    validateMachineCreation(World.context) { (prevAppState, addedMachine, nextAppState) =>
+      prevAppState.store + (prevAppState.id -> addedMachine.value) == nextAppState.store
     }
   }
 
-  def validateMachineCreation(context: Context)(validator: (MachineWithoutId, AppState, Output[MachineState], AppState) => Boolean): Assertion = {
+  def validateMachineCreation(context: Context)(validator: (AppState, Output[MachineState], AppState) => Boolean): Assertion = {
     implicit val machine: Arbitrary[MachineWithoutId] =
       context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =
@@ -42,10 +41,10 @@ class CreateMachineSteps extends ScalaDsl with EN {
     check { (app: TestApp, machineToAdd: MachineWithoutId) =>
       val shouldBeTrue = for {
         appStateBeforeOperation <- app.state
-        addedMachine <- app.createMachine(request(machineToAdd)).output.sequence
+        output <- app.createMachine(request(machineToAdd)).output.sequence
         appStateAfterOperation <- app.state
-      } yield addedMachine.map(m =>
-        validator(machineToAdd, appStateBeforeOperation, m, appStateAfterOperation)
+      } yield output.map(o =>
+        validator(appStateBeforeOperation, o, appStateAfterOperation)
       )
       
       shouldBeTrue.unsafeRunSync()
