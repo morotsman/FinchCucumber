@@ -2,8 +2,7 @@ package steps
 
 import cats.effect.IO
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
-import io.finch.Application.Json
-import io.finch.{Input, Output}
+import io.finch.Output
 import org.scalacheck.Arbitrary
 
 case class Context(
@@ -11,7 +10,7 @@ case class Context(
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     createMachineRequest: Option[(MachineWithoutId, TestApp) => IO[Option[Output[MachineState]]]],
                     getMachinesRequest: Option[TestApp => IO[Option[Output[List[MachineState]]]]],
-                    machineInputRequest: Option[(MachineWithoutId, TestApp, AppState) => IO[Option[(MachineState, Output[MachineState])]]],
+                    machineInputRequest: Option[(MachineWithoutId, TestApp) => IO[Option[(MachineState, Output[MachineState])]]],
   )
 
 object Context {
