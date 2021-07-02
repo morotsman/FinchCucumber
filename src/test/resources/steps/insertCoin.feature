@@ -1,6 +1,6 @@
 Feature: Insert a coin in the candy machine
 
-  Scenario: Insert a coin in a locked machine
+  Scenario: Insert a coin in a locked machine with candies
     Given a park of candy machines
     And an locked machine with candies
     When a coin is inserted in the candy machine
