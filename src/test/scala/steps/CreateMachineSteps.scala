@@ -1,5 +1,6 @@
 package steps
 
+import cats.data.OptionT
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
@@ -15,7 +16,10 @@ import steps.helpers.PrerequisiteException
 class CreateMachineSteps extends ScalaDsl with EN {
 
   When("""the candy machine is added to the park""") { () =>
-    World.context = World.context.copy(createMachineRequest = Some(Input.post("/machine").withBody[Application.Json]))
+    World.context = World.context.copy(createMachineRequest = Some((machine, app) => {
+      val createMachineRequest = Input.post("/machine").withBody[Application.Json]
+      app.createMachine(createMachineRequest(machine)).output.sequence
+    }))
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
@@ -40,12 +44,12 @@ class CreateMachineSteps extends ScalaDsl with EN {
     check { (app: TestApp, machineToAdd: MachineWithoutId) =>
       val shouldBeTrue = for {
         appStateBeforeOperation <- app.state
-        output <- app.createMachine(request(machineToAdd)).output.sequence
+        output <- request(machineToAdd, app)
         appStateAfterOperation <- app.state
       } yield output.map(o =>
         validator(appStateBeforeOperation, o, appStateAfterOperation)
       )
-      
+
       shouldBeTrue.unsafeRunSync()
         .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
     }

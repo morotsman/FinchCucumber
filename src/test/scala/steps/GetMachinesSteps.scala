@@ -11,7 +11,10 @@ import steps.helpers.PrerequisiteException
 class GetMachinesSteps extends ScalaDsl with EN {
 
   When("""checking the statuses of the candy machines in the park""") { () =>
-    World.context = World.context.copy(getMachinesRequest = Some(Input.get("/machine")))
+    World.context = World.context.copy(getMachinesRequest = Some(app => {
+      val input = Input.get("/machine")
+      app.getMachines(input).output.sequence
+    }))
   }
 
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
@@ -23,9 +26,9 @@ class GetMachinesSteps extends ScalaDsl with EN {
     check { (app: TestApp) =>
       val shouldBeTrue = for {
         prev <- app.state
-        machines <- app.getMachines(request).output.sequence
+        machines <- request(app)
         next <- app.state
-      } yield machines.map( ms =>
+      } yield machines.map(ms =>
         stateUnChanged(prev, next) && ms.value == prev.store.values.toList.sortBy(_.id)
       )
 

@@ -9,8 +9,8 @@ import org.scalacheck.Arbitrary
 case class Context(
                     appGenerator: Option[Arbitrary[TestApp]],
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
-                    createMachineRequest: Option[Input.Body[Json]],
-                    getMachinesRequest: Option[Input],
+                    createMachineRequest: Option[(MachineWithoutId, TestApp) => IO[Option[Output[MachineState]]]],
+                    getMachinesRequest: Option[TestApp => IO[Option[Output[List[MachineState]]]]],
                     machineInputRequest: Option[(MachineWithoutId, TestApp, AppState) => IO[Option[(MachineState, Output[MachineState])]]],
   )
 
