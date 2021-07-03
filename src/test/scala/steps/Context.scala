@@ -8,12 +8,8 @@ import org.scalacheck.Arbitrary
 case class Action[A](run: (MachineWithoutId, TestApp) => IO[Option[(A, Output[A])]])
 
 case class Context(
-                    appGenerator: Option[Arbitrary[TestApp]],
-                    machineGenerator: Option[Arbitrary[MachineWithoutId]],
-                    finchAction: Option[Action[MachineState]],
-                    finchListAction: Option[Action[List[MachineState]]],
+                    appGenerator: Option[Arbitrary[TestApp]] = None,
+                    machineGenerator: Option[Arbitrary[MachineWithoutId]] = None,
+                    finchAction: Option[Action[MachineState]] = None,
+                    finchListAction: Option[Action[List[MachineState]]] = None,
   )
-
-object Context {
-  def emptyContext: Context = Context(None, None, None, None)
-}
