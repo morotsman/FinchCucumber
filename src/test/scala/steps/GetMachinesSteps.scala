@@ -2,6 +2,7 @@ package steps
 
 import cats.data.OptionT
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
+import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.Input
 import org.scalatestplus.scalacheck.Checkers.check
@@ -24,7 +25,7 @@ class GetMachinesSteps extends ScalaDsl with EN {
       World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =
       World.context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-    val request =
+    val request: Action[List[MachineState]] =
       World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
 
     check { (machineToAdd: MachineWithoutId, app: TestApp) =>
