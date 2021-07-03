@@ -14,7 +14,7 @@ object Validator {
   }
 
   def validateListAction(validator: (AppState, (List[MachineState], Output[List[MachineState]]), AppState) => Boolean): Assertion = {
-    val action = World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    val action = World.context.finchListAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
     genericValidator(action, validator)
   }
 

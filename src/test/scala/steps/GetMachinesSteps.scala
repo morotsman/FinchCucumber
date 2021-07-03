@@ -9,7 +9,7 @@ import steps.Validator._
 class GetMachinesSteps extends ScalaDsl with EN {
 
   When("""checking the statuses of the candy machines in the park""") { () =>
-    World.context = World.context.copy(getMachinesRequest = Some(Action((machine, app) => {
+    World.context = World.context.copy(finchListAction = Some(Action((_, app) => {
       val input = Input.get("/machine")
       val result = OptionT(app.getMachines(input).output.sequence)
       result.map(r => (r.value, r)).value

@@ -11,7 +11,7 @@ case class Context(
                     appGenerator: Option[Arbitrary[TestApp]],
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     finchAction: Option[Action[MachineState]],
-                    getMachinesRequest: Option[Action[List[MachineState]]],
+                    finchListAction: Option[Action[List[MachineState]]],
   )
 
 object Context {
