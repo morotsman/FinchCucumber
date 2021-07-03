@@ -9,7 +9,7 @@ case class Context(
                     appGenerator: Option[Arbitrary[TestApp]],
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     createMachineRequest: Option[(MachineWithoutId, TestApp) => IO[Option[(MachineState, Output[MachineState])]]],
-                    getMachinesRequest: Option[TestApp => IO[Option[Output[List[MachineState]]]]],
+                    getMachinesRequest: Option[(MachineWithoutId, TestApp) => IO[Option[(List[MachineState], Output[List[MachineState]])]]],
                     machineInputRequest: Option[(MachineWithoutId, TestApp) => IO[Option[(MachineState, Output[MachineState])]]],
   )
 
