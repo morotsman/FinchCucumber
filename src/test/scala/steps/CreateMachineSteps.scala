@@ -7,6 +7,7 @@ import io.finch.{Application, Input, Output}
 import io.circe.generic.auto._
 import io.finch.circe._
 import steps.Validator._
+import steps.helpers.PrerequisiteException
 
 class CreateMachineSteps extends ScalaDsl with EN {
 
@@ -19,13 +20,15 @@ class CreateMachineSteps extends ScalaDsl with EN {
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
-    validateAction { (prevAppState, machineAndOutput, nextAppState) =>
+    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
       prevAppState.id + 1 == nextAppState.id && !prevAppState.store.contains(machineAndOutput._2.value.id)
     }
   }
 
   Then("""the machine should be added to the park""") { () =>
-    validateAction { (prevAppState, machineAndOutput, nextAppState) =>
+    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
       prevAppState.store + (prevAppState.id -> machineAndOutput._2.value) == nextAppState.store
     }
   }

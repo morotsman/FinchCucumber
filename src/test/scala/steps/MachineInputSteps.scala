@@ -10,6 +10,7 @@ import io.finch.{Application, Input}
 import io.circe.generic.auto._
 import io.finch.circe._
 import steps.Validator._
+import steps.helpers.PrerequisiteException
 
 class MachineInputSteps extends ScalaDsl with EN {
 
@@ -40,7 +41,8 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   Then("""the coin should be rejected""") { () =>
-    validateAction { (prevAppState, machineAndOutput, nextAppState) =>
+    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
       machineAndOutput._2.status match {
         case Status.NotFound =>
           stateUnChanged(prevAppState, nextAppState) && machineUnknown(machineAndOutput._1.id, prevAppState)
@@ -53,7 +55,8 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   Then("""the candy machine should be unlocked""") { () =>
-    validateAction { (prevAppState, machineAndOutput, nextAppState) =>
+    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
       machineAndOutput._2.status match {
         case Status.Ok =>
           isUnlocked(machineAndOutput._1.id, addMachineToState(machineAndOutput._1, prevAppState), nextAppState)

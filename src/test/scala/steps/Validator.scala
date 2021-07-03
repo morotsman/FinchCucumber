@@ -8,20 +8,8 @@ import org.scalatestplus.scalacheck.Checkers.check
 import steps.helpers.PrerequisiteException
 
 object Validator {
-  def validateAction(validator: (AppState, (MachineState, Output[MachineState]), AppState) => Boolean): Assertion = {
-    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    genericValidator(action, validator)
-  }
 
-  def validateListAction(validator: (AppState, (List[MachineState], Output[List[MachineState]]), AppState) => Boolean): Assertion = {
-    val action = World.context.finchListAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    genericValidator(action, validator)
-  }
-
-  private def genericValidator[A](
-                                   action: Action[A],
-                                   validator: (AppState, (A, Output[A]), AppState) => Boolean,
-                                 ): Assertion = {
+  def validate[A](action: Action[A])(validator: (AppState, (A, Output[A]), AppState) => Boolean): Assertion = {
     implicit val machine: Arbitrary[MachineWithoutId] =
       World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =

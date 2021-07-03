@@ -5,6 +5,7 @@ import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.Input
 import steps.Validator._
+import steps.helpers.PrerequisiteException
 
 class GetMachinesSteps extends ScalaDsl with EN {
 
@@ -17,7 +18,8 @@ class GetMachinesSteps extends ScalaDsl with EN {
   }
 
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
-    validateListAction { (prevAppState, machineAndOutput, nextAppState) =>
+    val action = World.context.finchListAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
       stateUnChanged(prevAppState, nextAppState) && machineAndOutput._2.value == prevAppState.store.values.toList.sortBy(_.id)
     }
   }
