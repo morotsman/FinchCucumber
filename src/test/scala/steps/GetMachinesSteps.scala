@@ -2,18 +2,14 @@ package steps
 
 import cats.data.OptionT
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
-import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.Input
-import org.scalatestplus.scalacheck.Checkers.check
-import org.scalacheck.Arbitrary
-import org.scalatestplus.scalacheck.Checkers._
-import steps.helpers.PrerequisiteException
+import io.finch.{Input, Output}
+import steps.Validator._
 
 class GetMachinesSteps extends ScalaDsl with EN {
 
   When("""checking the statuses of the candy machines in the park""") { () =>
-    World.context = World.context.copy(getMachinesRequest = Some( Action((machine, app) => {
+    World.context = World.context.copy(getMachinesRequest = Some(Action((machine, app) => {
       val input = Input.get("/machine")
       val result = OptionT(app.getMachines(input).output.sequence)
       result.map(r => (r.value, r)).value
@@ -21,26 +17,9 @@ class GetMachinesSteps extends ScalaDsl with EN {
   }
 
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
-    implicit val machine: Arbitrary[MachineWithoutId] =
-      World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
-    implicit val app: Arbitrary[TestApp] =
-      World.context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-    val request: Action[List[MachineState]] =
-      World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-
-    check { (machineToAdd: MachineWithoutId, app: TestApp) =>
-      val shouldBeTrue = for {
-        prev <- app.state
-        machines <- request.run(machineToAdd, app)
-        next <- app.state
-      } yield machines.map(ms =>
-        stateUnChanged(prev, next) && ms._2.value == prev.store.values.toList.sortBy(_.id)
-      )
-
-      shouldBeTrue.unsafeRunSync()
-        .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
+    validateListAction { (prevAppState, machineAndOutput, nextAppState) =>
+      stateUnChanged(prevAppState, nextAppState) && machineAndOutput._2.value == prevAppState.store.values.toList.sortBy(_.id)
     }
-
   }
 
   private def stateUnChanged(prev: AppState, next: AppState): Boolean =

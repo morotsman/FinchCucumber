@@ -28,4 +28,26 @@ object Validator {
         .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
     }
   }
+
+  def validateListAction(validator: (AppState, (List[MachineState], Output[List[MachineState]]), AppState) => Boolean): Assertion = {
+    implicit val machine: Arbitrary[MachineWithoutId] =
+      World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
+    implicit val app: Arbitrary[TestApp] =
+      World.context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
+    val request: Action[List[MachineState]] =
+      World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+
+    check { (machineToAdd: MachineWithoutId, app: TestApp) =>
+      val shouldBeTrue = for {
+        prev <- app.state
+        machines <- request.run(machineToAdd, app)
+        next <- app.state
+      } yield machines.map(ms =>
+        validator(prev, ms, next)
+      )
+
+      shouldBeTrue.unsafeRunSync()
+        .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
+    }
+  }
 }
