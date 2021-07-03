@@ -19,17 +19,17 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
     World.context = World.context.copy(machineInputRequest =
-        Some((machine, testApp) => {
+        Some(Action((machine, testApp) => {
           val unknownId = -1
           val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
           val result = OptionT(testApp.insertCoin(insertCoinRequest).output.sequence)
           result.map(om => (machine.withId(unknownId), om)).value
-        }))
+        })))
   }
 
   When("""a coin is inserted in the candy machine""") {
     World.context = World.context.copy(machineInputRequest =
-      Some(value = (machine, testApp) => {
+      Some(Action((machine, testApp) => {
         val createMachineRequest = Input.post("/machine").withBody[Application.Json]
         val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
 
@@ -40,7 +40,7 @@ class MachineInputSteps extends ScalaDsl with EN {
           machine <- createMachine
           result <- insertCoinInMachine(machine.value.id)
         } yield (machine.value, result)).value
-      }))
+      })))
   }
 
 
@@ -63,7 +63,7 @@ class MachineInputSteps extends ScalaDsl with EN {
     check { (app: TestApp, randomMachine: MachineWithoutId) =>
       val result = for {
         prevAppState <- app.state
-        machineAndOutput <- request(randomMachine, app)
+        machineAndOutput <- request.run(randomMachine, app)
         nextAppState <- app.state
       } yield machineAndOutput.map(mo => mo._2.status match {
         case Status.NotFound =>

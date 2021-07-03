@@ -17,11 +17,11 @@ import steps.helpers.PrerequisiteException
 class CreateMachineSteps extends ScalaDsl with EN {
 
   When("""the candy machine is added to the park""") { () =>
-    World.context = World.context.copy(createMachineRequest = Some((machine, app) => {
+    World.context = World.context.copy(createMachineRequest = Some(Action((machine, app) => {
       val createMachineRequest = Input.post("/machine").withBody[Application.Json]
       val result = OptionT(app.createMachine(createMachineRequest(machine)).output.sequence)
       result.map(r => (r.value, r)).value
-    }))
+    })))
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
@@ -46,7 +46,7 @@ class CreateMachineSteps extends ScalaDsl with EN {
     check { (app: TestApp, machineToAdd: MachineWithoutId) =>
       val shouldBeTrue = for {
         appStateBeforeOperation <- app.state
-        output <- request(machineToAdd, app)
+        output <- request.run(machineToAdd, app)
         appStateAfterOperation <- app.state
       } yield output.map(o =>
         validator(appStateBeforeOperation, o, appStateAfterOperation)
