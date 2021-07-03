@@ -7,14 +7,8 @@ import com.twitter.finagle.http.Status
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.{Application, Input}
-import org.scalatestplus.scalacheck.Checkers.check
 import io.circe.generic.auto._
 import io.finch.circe._
-import org.scalacheck.Arbitrary
-import org.scalatest.Assertion
-import org.scalatestplus.scalacheck.Checkers._
-import steps.helpers.PrerequisiteException
-import steps.Context._
 import steps.Validator._
 
 class MachineInputSteps extends ScalaDsl with EN {
@@ -44,7 +38,7 @@ class MachineInputSteps extends ScalaDsl with EN {
         } yield (machine.value, result)).value
       })))
   }
-  
+
   Then("""the coin should be rejected""") { () =>
     validateAction { (prevAppState, machineAndOutput, nextAppState) =>
       machineAndOutput._2.status match {
