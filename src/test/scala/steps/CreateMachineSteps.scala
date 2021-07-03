@@ -1,5 +1,7 @@
 package steps
 
+import cats.data.OptionT
+import cats.effect.IO
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
@@ -17,23 +19,24 @@ class CreateMachineSteps extends ScalaDsl with EN {
   When("""the candy machine is added to the park""") { () =>
     World.context = World.context.copy(createMachineRequest = Some((machine, app) => {
       val createMachineRequest = Input.post("/machine").withBody[Application.Json]
-      app.createMachine(createMachineRequest(machine)).output.sequence
+      val result = OptionT(app.createMachine(createMachineRequest(machine)).output.sequence)
+      result.map(r => (r.value, r)).value
     }))
   }
 
   Then("""the machine should be allocated an unique id""") { () =>
-    validateMachineCreation(World.context) { (prevAppState, addedMachine, nextAppState) =>
-      prevAppState.id + 1 == nextAppState.id && !prevAppState.store.contains(addedMachine.value.id)
+    validateMachineCreation(World.context) { (prevAppState, mo, nextAppState) =>
+      prevAppState.id + 1 == nextAppState.id && !prevAppState.store.contains(mo._2.value.id)
     }
   }
 
   Then("""the machine should be added to the park""") { () =>
-    validateMachineCreation(World.context) { (prevAppState, addedMachine, nextAppState) =>
-      prevAppState.store + (prevAppState.id -> addedMachine.value) == nextAppState.store
+    validateMachineCreation(World.context) { (prevAppState, mo, nextAppState) =>
+      prevAppState.store + (prevAppState.id -> mo._2.value) == nextAppState.store
     }
   }
 
-  def validateMachineCreation(context: Context)(validator: (AppState, Output[MachineState], AppState) => Boolean): Assertion = {
+  def validateMachineCreation(context: Context)(validator: (AppState, (MachineState, Output[MachineState]), AppState) => Boolean): Assertion = {
     implicit val machine: Arbitrary[MachineWithoutId] =
       context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =
