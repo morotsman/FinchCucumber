@@ -13,11 +13,10 @@ case class Context(
                     machineGenerator: Option[Arbitrary[MachineWithoutId]],
                     finchAction: Option[Action[MachineState]],
                     getMachinesRequest: Option[Action[List[MachineState]]],
-                    machineInputRequest: Option[Action[MachineState]],
   )
 
 object Context {
-  def emptyContext: Context = Context(None, None, None, None, None)
+  def emptyContext: Context = Context(None, None, None, None)
 
   def withContext[A](fun: (Arbitrary[MachineWithoutId], Arbitrary[TestApp], Action[MachineState]) => A): A = {
     implicit val machine: Arbitrary[MachineWithoutId] =
