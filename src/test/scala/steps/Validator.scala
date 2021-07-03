@@ -9,38 +9,28 @@ import steps.helpers.PrerequisiteException
 
 object Validator {
   def validateAction(validator: (AppState, (MachineState, Output[MachineState]), AppState) => Boolean): Assertion = {
-    implicit val machine: Arbitrary[MachineWithoutId] =
-      World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
-    implicit val app: Arbitrary[TestApp] =
-      World.context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-    val request: Action[MachineState] = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-
-    check { (app: TestApp, machineToAdd: MachineWithoutId) =>
-      val shouldBeTrue = for {
-        appStateBeforeOperation <- app.state
-        output <- request.run(machineToAdd, app)
-        appStateAfterOperation <- app.state
-      } yield output.map(o =>
-        validator(appStateBeforeOperation, o, appStateAfterOperation)
-      )
-
-      shouldBeTrue.unsafeRunSync()
-        .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
-    }
+    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    genericValidator(action, validator)
   }
 
   def validateListAction(validator: (AppState, (List[MachineState], Output[List[MachineState]]), AppState) => Boolean): Assertion = {
+    val action = World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    genericValidator(action, validator)
+  }
+
+  private def genericValidator[A](
+                                   action: Action[A],
+                                   validator: (AppState, (A, Output[A]), AppState) => Boolean,
+                                 ): Assertion = {
     implicit val machine: Arbitrary[MachineWithoutId] =
       World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =
       World.context.appGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine park generator"))
-    val request: Action[List[MachineState]] =
-      World.context.getMachinesRequest.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
 
     check { (machineToAdd: MachineWithoutId, app: TestApp) =>
       val shouldBeTrue = for {
         prev <- app.state
-        machines <- request.run(machineToAdd, app)
+        machines <- action.run(machineToAdd, app)
         next <- app.state
       } yield machines.map(ms =>
         validator(prev, ms, next)
@@ -50,4 +40,5 @@ object Validator {
         .getOrElse(throw new PrerequisiteException("Could not execute the finch action"))
     }
   }
+
 }
