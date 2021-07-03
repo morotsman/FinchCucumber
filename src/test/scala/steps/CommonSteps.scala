@@ -24,7 +24,7 @@ case class MachineWithoutId(locked: Boolean, candies: Int, coins: Int) {
 }
 
 class CommonSteps extends ScalaDsl with EN {
-  private def genMachineWithoutId(unlocked: Boolean = false, locked: Boolean = false, minCandies: Int = 0, maxCandies: Int = 3): Gen[MachineWithoutId] = for {
+  private def genMachineWithoutId(unlocked: Boolean = false, locked: Boolean = false, minCandies: Int = 0, maxCandies: Int = 1000): Gen[MachineWithoutId] = for {
     locked <- if (unlocked)
       Gen.oneOf(false, false)
     else if(locked)
