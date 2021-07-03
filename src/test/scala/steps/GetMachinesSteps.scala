@@ -3,7 +3,7 @@ package steps
 import cats.data.OptionT
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Input, Output}
+import io.finch.Input
 import steps.Validator._
 
 class GetMachinesSteps extends ScalaDsl with EN {
