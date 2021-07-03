@@ -14,18 +14,20 @@ import steps.helpers.PrerequisiteException
 
 class MachineInputSteps extends ScalaDsl with EN {
 
+  private var action: Option[Action[MachineState]] = None
+
   When("""the customer inserts a coin in a candy machine that has not been added to the park""") { () =>
-    World.context = World.context.copy(finchAction =
+    action =
       Some(Action((machine, testApp) => {
         val unknownId = -1
         val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
         val result = OptionT(testApp.insertCoin(insertCoinRequest).output.sequence)
         result.map(om => (machine.withId(unknownId), om)).value
-      })))
+      }))
   }
 
   When("""a coin is inserted in the candy machine""") {
-    World.context = World.context.copy(finchAction =
+    action =
       Some(Action((machine, testApp) => {
         val createMachineRequest = Input.post("/machine").withBody[Application.Json]
         val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
@@ -37,12 +39,12 @@ class MachineInputSteps extends ScalaDsl with EN {
           machine <- createMachine
           result <- insertCoinInMachine(machine.value.id)
         } yield (machine.value, result)).value
-      })))
+      }))
   }
 
   Then("""the coin should be rejected""") { () =>
-    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
+    val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(theAction) { (prevAppState, machineAndOutput, nextAppState) =>
       machineAndOutput._2.status match {
         case Status.NotFound =>
           stateUnChanged(prevAppState, nextAppState) && machineUnknown(machineAndOutput._1.id, prevAppState)
@@ -55,8 +57,8 @@ class MachineInputSteps extends ScalaDsl with EN {
   }
 
   Then("""the candy machine should be unlocked""") { () =>
-    val action = World.context.finchAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
+    val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(theAction) { (prevAppState, machineAndOutput, nextAppState) =>
       machineAndOutput._2.status match {
         case Status.Ok =>
           isUnlocked(machineAndOutput._1.id, addMachineToState(machineAndOutput._1, prevAppState), nextAppState)

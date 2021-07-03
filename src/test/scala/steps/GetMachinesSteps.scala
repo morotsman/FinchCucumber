@@ -2,6 +2,7 @@ package steps
 
 import cats.data.OptionT
 import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
+import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
 import io.finch.Input
 import steps.Validator._
@@ -9,17 +10,19 @@ import steps.helpers.PrerequisiteException
 
 class GetMachinesSteps extends ScalaDsl with EN {
 
+  private var action: Option[Action[List[MachineState]]] = None
+
   When("""checking the statuses of the candy machines in the park""") { () =>
-    World.context = World.context.copy(finchListAction = Some(Action((_, app) => {
+    action = Some(Action((_, app) => {
       val input = Input.get("/machine")
       val result = OptionT(app.getMachines(input).output.sequence)
       result.map(r => (r.value, r)).value
-    })))
+    }))
   }
 
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
-    val action = World.context.finchListAction.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(action) { (prevAppState, machineAndOutput, nextAppState) =>
+    val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
+    validate(theAction) { (prevAppState, machineAndOutput, nextAppState) =>
       stateUnChanged(prevAppState, nextAppState) && machineAndOutput._2.value == prevAppState.store.values.toList.sortBy(_.id)
     }
   }
