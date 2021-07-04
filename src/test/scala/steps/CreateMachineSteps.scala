@@ -19,14 +19,14 @@ class CreateMachineSteps extends ScalaDsl with EN {
 
   Then("""the machine should be allocated an unique id""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+    validate(theAction) { (prevAppState, _, result, currentAppState) =>
       prevAppState.id + 1 == currentAppState.id && !prevAppState.store.contains(result.value.id)
     }
   }
 
   Then("""the machine should be added to the park""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+    validate(theAction) { (prevAppState, _, result, currentAppState) =>
       prevAppState.store + (prevAppState.id -> result.value) == currentAppState.store
     }
   }
