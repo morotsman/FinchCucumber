@@ -19,7 +19,7 @@ class GetMachinesSteps extends ScalaDsl with EN {
 
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+    validate(theAction) { (prevAppState, _, result, currentAppState) =>
       stateUnChanged(prevAppState, currentAppState) && result.value == prevAppState.store.values.toList.sortBy(_.id)
     }
   }
