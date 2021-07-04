@@ -2,6 +2,7 @@ package steps
 
 import cats.data.OptionT
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
+import com.twitter.finagle.http.Status
 import io.cucumber.scala.{EN, ScalaDsl}
 import steps.helpers.MachineDao.createMachine
 import steps.helpers.Validator._
@@ -19,15 +20,19 @@ class CreateMachineSteps extends ScalaDsl with EN {
 
   Then("""the machine should be allocated an unique id""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, _, result, currentAppState) =>
-      prevAppState.id + 1 == currentAppState.id && !prevAppState.store.contains(result.value.id)
+    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+      result.status == Status.Created &&
+      prevAppState.id + 1 == currentAppState.id &&
+        !prevAppState.store.contains(machine.id) &&
+        machine.id == prevAppState.id
     }
   }
 
   Then("""the machine should be added to the park""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, _, result, currentAppState) =>
-      prevAppState.store + (prevAppState.id -> result.value) == currentAppState.store
+    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+      result.status == Status.Created &&
+      prevAppState.store + (prevAppState.id -> machine) == currentAppState.store
     }
   }
 }

@@ -2,6 +2,7 @@ package steps
 
 import cats.data.OptionT
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
+import com.twitter.finagle.http.Status
 import io.cucumber.scala.{EN, ScalaDsl}
 import steps.helpers.Validator._
 import steps.helpers.{Action, PrerequisiteException}
@@ -19,8 +20,10 @@ class GetMachinesSteps extends ScalaDsl with EN {
 
   Then("""the status of the candy machines should be returned, sorted by id""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, _, result, currentAppState) =>
-      stateUnChanged(prevAppState, currentAppState) && result.value == prevAppState.store.values.toList.sortBy(_.id)
+    validate(theAction) { (prevAppState, machines, result, currentAppState) =>
+      result.status == Status.Ok &&
+        stateUnChanged(prevAppState, currentAppState) &&
+        machines == prevAppState.store.values.toList.sortBy(_.id)
     }
   }
 
