@@ -23,13 +23,5 @@ class GetMachinesSteps extends ScalaDsl with EN {
       stateUnChanged(prevAppState, nextAppState) && machineAndOutput._2.value == prevAppState.store.values.toList.sortBy(_.id)
     }
   }
-
-  private def stateUnChanged(prev: AppState, next: AppState): Boolean =
-    sameId(prev, next) && storeSame(prev, next)
-
-  private def sameId(prev: AppState, next: AppState): Boolean =
-    prev.id == next.id
-
-  private def storeSame(prev: AppState, next: AppState): Boolean =
-    prev.store == next.store
+  
 }

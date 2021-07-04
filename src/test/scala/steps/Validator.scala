@@ -29,4 +29,16 @@ object Validator {
     }
   }
 
+  def machineUnknown(id: Int, prev: AppState): Boolean =
+    !prev.store.contains(id)
+
+  def stateUnChanged(prev: AppState, next: AppState): Boolean =
+    sameId(prev, next) && storeSame(prev, next)
+
+  def sameId(prev: AppState, next: AppState): Boolean =
+    prev.id == next.id
+
+  def storeSame(prev: AppState, next: AppState): Boolean =
+    prev.store == next.store
+
 }

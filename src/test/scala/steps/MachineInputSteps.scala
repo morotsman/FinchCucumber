@@ -63,18 +63,6 @@ class MachineInputSteps extends ScalaDsl with EN {
       store = app.store + (m.id -> m)
     )
 
-  private def machineUnknown(id: Int, prev: AppState): Boolean =
-    !prev.store.contains(id)
-
-  private def stateUnChanged(prev: AppState, next: AppState): Boolean =
-    sameId(prev, next) && storeSame(prev, next)
-
-  private def sameId(prev: AppState, next: AppState): Boolean =
-    prev.id == next.id
-
-  private def storeSame(prev: AppState, next: AppState): Boolean =
-    prev.store == next.store
-
   def machineInWrongState(id: Int, prev: AppState, command: MachineInput): Boolean = command match {
     case Turn =>
       prev.store(id).locked || prev.store(id).candies <= 0
