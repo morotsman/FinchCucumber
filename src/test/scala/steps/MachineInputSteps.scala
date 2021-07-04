@@ -5,9 +5,9 @@ import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, Machi
 import com.twitter.finagle.http.Status
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import steps.Validator._
-import steps.helpers.PrerequisiteException
-import steps.MachineDao._
+import steps.helpers.Validator._
+import steps.helpers.{Action, PrerequisiteException}
+import steps.helpers.MachineDao._
 
 class MachineInputSteps extends ScalaDsl with EN {
 

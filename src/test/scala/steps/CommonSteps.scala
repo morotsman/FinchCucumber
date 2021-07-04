@@ -6,6 +6,7 @@ import cats.effect.IO
 import cats.effect.concurrent.Ref
 import io.finch.internal.DummyExecutionContext
 import org.scalacheck.{Arbitrary, Gen}
+import steps.helpers.World
 
 case class AppState(id: Int, store: Map[Int, MachineState])
 

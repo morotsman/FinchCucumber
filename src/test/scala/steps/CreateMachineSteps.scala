@@ -3,9 +3,9 @@ package steps
 import cats.data.OptionT
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import steps.MachineDao.createMachine
-import steps.Validator._
-import steps.helpers.PrerequisiteException
+import steps.helpers.MachineDao.createMachine
+import steps.helpers.Validator._
+import steps.helpers.{Action, PrerequisiteException}
 
 class CreateMachineSteps extends ScalaDsl with EN {
 

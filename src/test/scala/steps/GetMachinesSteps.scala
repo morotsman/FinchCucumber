@@ -3,9 +3,9 @@ package steps
 import cats.data.OptionT
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import steps.Validator._
-import steps.helpers.PrerequisiteException
-import steps.MachineDao._
+import steps.helpers.Validator._
+import steps.helpers.{Action, PrerequisiteException}
+import steps.helpers.MachineDao._
 
 class GetMachinesSteps extends ScalaDsl with EN {
 
@@ -23,5 +23,5 @@ class GetMachinesSteps extends ScalaDsl with EN {
       stateUnChanged(prevAppState, nextAppState) && machineAndOutput._2.value == prevAppState.store.values.toList.sortBy(_.id)
     }
   }
-  
+
 }

@@ -1,11 +1,10 @@
-package steps
+package steps.helpers
 
-import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.finch.Output
 import org.scalacheck.Arbitrary
 import org.scalatest.Assertion
 import org.scalatestplus.scalacheck.Checkers.check
-import steps.helpers.PrerequisiteException
+import steps._
 
 object Validator {
 

@@ -1,7 +1,7 @@
-package steps
+package steps.helpers
 
 import io.cucumber.scala.{ScalaDsl, Scenario}
-import steps.World.context
+import steps.helpers.World.context
 
 object World {
   var context: Context = Context()

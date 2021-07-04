@@ -1,9 +1,10 @@
-package steps
+package steps.helpers
 
 import cats.effect.IO
-import io.finch.{Application, Input, Output}
-import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
+import cats.implicits._
 import com.github.morotsman.investigate_finagle_service.candy_finch.{App, MachineState}
+import io.finch.{Application, Input, Output}
+import steps.MachineWithoutId
 import io.circe.generic.auto._
 import io.finch.circe._
 
