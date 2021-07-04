@@ -1,14 +1,10 @@
 package steps
 
 import cats.data.OptionT
-import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.{Coin, MachineInput, Turn}
 import com.twitter.finagle.http.Status
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Application, Input}
-import io.circe.generic.auto._
-import io.finch.circe._
 import steps.Validator._
 import steps.helpers.PrerequisiteException
 import steps.MachineDao._
