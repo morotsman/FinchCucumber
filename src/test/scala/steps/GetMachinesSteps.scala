@@ -1,12 +1,11 @@
 package steps
 
 import cats.data.OptionT
-import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.Input
 import steps.Validator._
 import steps.helpers.PrerequisiteException
+import steps.MachineDao._
 
 class GetMachinesSteps extends ScalaDsl with EN {
 
@@ -14,9 +13,7 @@ class GetMachinesSteps extends ScalaDsl with EN {
 
   When("""checking the statuses of the candy machines in the park""") { () =>
     action = Some(Action((_, app) => {
-      val input = Input.get("/machine")
-      val result = OptionT(app.getMachines(input).output.sequence)
-      result.map(r => (r.value, r)).value
+      OptionT(getMachines(app)).map(r => (r.value, r)).value
     }))
   }
 

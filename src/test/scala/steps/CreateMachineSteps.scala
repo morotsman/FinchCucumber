@@ -1,12 +1,9 @@
 package steps
 
 import cats.data.OptionT
-import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
 import com.github.morotsman.investigate_finagle_service.candy_finch.MachineState
 import io.cucumber.scala.{EN, ScalaDsl}
-import io.finch.{Application, Input, Output}
-import io.circe.generic.auto._
-import io.finch.circe._
+import steps.MachineDao.createMachine
 import steps.Validator._
 import steps.helpers.PrerequisiteException
 
@@ -16,9 +13,7 @@ class CreateMachineSteps extends ScalaDsl with EN {
 
   When("""the candy machine is added to the park""") { () =>
     action = Some(Action((machine, app) => {
-      val createMachineRequest = Input.post("/machine").withBody[Application.Json]
-      val result = OptionT(app.createMachine(createMachineRequest(machine)).output.sequence)
-      result.map(r => (r.value, r)).value
+      OptionT(createMachine(app, machine)).map(r => (r.value, r)).value
     }))
   }
 

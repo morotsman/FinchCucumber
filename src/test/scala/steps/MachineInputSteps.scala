@@ -11,6 +11,7 @@ import io.circe.generic.auto._
 import io.finch.circe._
 import steps.Validator._
 import steps.helpers.PrerequisiteException
+import steps.MachineDao._
 
 class MachineInputSteps extends ScalaDsl with EN {
 
@@ -20,24 +21,16 @@ class MachineInputSteps extends ScalaDsl with EN {
     action =
       Some(Action((machine, testApp) => {
         val unknownId = -1
-        val insertCoinRequest = Input.put(s"/machine/$unknownId/coin")
-        val result = OptionT(testApp.insertCoin(insertCoinRequest).output.sequence)
-        result.map(om => (machine.withId(unknownId), om)).value
+        OptionT(insertCoin(testApp, unknownId)).map(om => (machine.withId(unknownId), om)).value
       }))
   }
 
   When("""a coin is inserted in the candy machine""") {
     action =
       Some(Action((machine, testApp) => {
-        val createMachineRequest = Input.post("/machine").withBody[Application.Json]
-        val createMachine = OptionT(testApp.createMachine(createMachineRequest(machine)).output.sequence)
-
-        val insertCoinRequest = (id: Int) => Input.put(s"/machine/$id/coin")
-        val insertCoinInMachine = (id: Int) => OptionT(testApp.insertCoin(insertCoinRequest(id)).output.sequence)
-
         (for {
-          machine <- createMachine
-          result <- insertCoinInMachine(machine.value.id)
+          machine <- OptionT(createMachine(testApp, machine))
+          result <- OptionT(insertCoin(testApp, machine.value.id))
         } yield (machine.value, result)).value
       }))
   }
@@ -50,7 +43,7 @@ class MachineInputSteps extends ScalaDsl with EN {
           stateUnChanged(prevAppState, nextAppState) && machineUnknown(machineAndOutput._1.id, prevAppState)
         case Status.BadRequest =>
           stateUnChanged(addMachineToState(machineAndOutput._1, prevAppState), nextAppState) && machineInWrongState(machineAndOutput._1.id, nextAppState, Coin)
-       case _ =>
+        case _ =>
           false
       }
     }
