@@ -33,12 +33,12 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   Then("""the coin should be rejected""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, machineAndOutput, nextAppState) =>
-      machineAndOutput._2.status match {
+    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+      result.status match {
         case Status.NotFound =>
-          stateUnChanged(prevAppState, nextAppState) && machineUnknown(machineAndOutput._1.id, prevAppState)
+          stateUnChanged(prevAppState, currentAppState) && machineUnknown(machine.id, prevAppState)
         case Status.BadRequest =>
-          stateUnChanged(addMachineToState(machineAndOutput._1, prevAppState), nextAppState) && machineInWrongState(machineAndOutput._1.id, nextAppState, Coin)
+          stateUnChanged(addMachineToState(machine, prevAppState), currentAppState) && machineInWrongState(machine.id, currentAppState, Coin)
         case _ =>
           false
       }
@@ -47,10 +47,10 @@ class MachineInputSteps extends ScalaDsl with EN {
 
   Then("""the candy machine should be unlocked""") { () =>
     val theAction = action.getOrElse(throw new PrerequisiteException("Expecting a finch action"))
-    validate(theAction) { (prevAppState, machineAndOutput, nextAppState) =>
-      machineAndOutput._2.status match {
+    validate(theAction) { (prevAppState, machine, result, currentAppState) =>
+      result.status match {
         case Status.Ok =>
-          isUnlocked(machineAndOutput._1.id, addMachineToState(machineAndOutput._1, prevAppState), nextAppState)
+          isUnlocked(machine.id, addMachineToState(machine, prevAppState), currentAppState)
         case _ =>
           false
       }

@@ -8,7 +8,7 @@ import steps._
 
 object Validator {
 
-  def validate[A](action: Action[A])(validator: (AppState, (A, Output[A]), AppState) => Boolean): Assertion = {
+  def validate[A](action: Action[A])(validator: (AppState, A, Output[A], AppState) => Boolean): Assertion = {
     implicit val machine: Arbitrary[MachineWithoutId] =
       World.context.machineGenerator.getOrElse(throw new PrerequisiteException("Expecting a machine generator"))
     implicit val app: Arbitrary[TestApp] =
@@ -20,7 +20,7 @@ object Validator {
         machines <- action.run(machineToAdd, app)
         next <- app.state
       } yield machines.map(ms =>
-        validator(prev, ms, next)
+        validator(prev, ms._1, ms._2, next)
       )
 
       shouldBeTrue.unsafeRunSync()
